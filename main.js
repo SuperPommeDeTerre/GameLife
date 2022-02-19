@@ -6,18 +6,7 @@ var nbGeneration=0;
 $(document).ready(function () {
 
     setTable();
-
-    $("td").click(function() {
-        var val = $(this).attr('value');
-
-        if (val == "0") {
-            $(this).css("background-color","black");
-            $(this).attr("value", "1");
-        }else {
-            $(this).css("background-color","white");
-            $(this).attr("value", "0");
-        }
-    });
+    defineCase();
 
     $('#start').click(function(){
         if (!nIntervId) {
@@ -34,6 +23,7 @@ $(document).ready(function () {
         clearInterval(nIntervId);
         nIntervId = null;
         setTable();
+        defineCase();
     })
 });
 
@@ -53,6 +43,21 @@ function setTable(){
     }
     modal+='</tbody></table>'
     $('#table').html(modal);
+}
+
+function defineCase(){
+    $("td").click(function() {
+        console.log("click");
+        var val = $(this).attr('value');
+
+        if (val == "0") {
+            $(this).css("background-color","black");
+            $(this).attr("value", "1");
+        }else {
+            $(this).css("background-color","white");
+            $(this).attr("value", "0");
+        }
+    });
 }
 
 function getVoisins(row, col) {
