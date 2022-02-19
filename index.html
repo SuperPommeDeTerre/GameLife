@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <script type="text/javascript" src="jquery.js"></script>
+        <script type="text/javascript" src="main.js"></script>
+        <title>Jeu de la vie</title>
+        <style media="screen">
+        .border-1{
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        .w-1{
+            width: 5px;
+        }
+        .h-1{
+            height: 5px;
+        }
+        </style>
+    </head>
+    <body>
+        <div id="table"></div>
+        <button type="button" name="button" id="start">Start</button>
+        <button type="button" name="button" id="pause">Pause</button>
+        <button type="button" name="button" id="restart">Restart</button>
+        <label>Génération :</label>
+        <input id="generation" type="text" value="0" disabled>
+    </body>
+</html>
