@@ -1,12 +1,14 @@
-var nbRow = 100;
-var nbCol = 100;
-var nIntervId;
-var nbGeneration=0;
+var nbRow = 100,
+    nbCol = 100,
+    nIntervId,
+    nbGeneration=0,
+    vueTableau = [],
+    laTable = null;
 
 $(document).ready(function () {
+    laTable = $('#dataTable');
 
     setTable();
-    defineCase();
 
     $('#start').click(function(){
         if (!nIntervId) {
@@ -23,64 +25,75 @@ $(document).ready(function () {
         clearInterval(nIntervId);
         nIntervId = null;
         setTable();
-        defineCase();
-    })
+    });
+
+    $('#dataTable').on('click', 'td', function(e) {
+        $(this).toggleClass('estvivante');
+    });
 });
 
 function setTable(){
-    var modal = '<table id="dataTable" class="border-1"><tbody>'
+    var maLigne = null,
+        maCellule = null,
+        tableContainer = laTable.find('tbody');
+    vueTableau = new Array(nbRow);
     for (var i = 0; i < nbRow; i++) {
-        modal+='<tr>'
+        maLigne = $('<tr></tr>');
+        vueTableau[i] = new Array(nbCol);
         for (var j = 0; j < nbCol; j++) {
             var color = Math.floor(Math.random() * 2);
-            if (color == 0) {
-                modal+='<td class="w-1 h-1 border-1" id="'+i+'-'+j+'" style="background-color: white;" value="0"></td>'
-            }else {
-                modal+='<td class="w-1 h-1 border-1" id="'+i+'-'+j+'" style="background-color: black;" value="1"></td>'
-            }
+            maCellule = $('<td class="' + (color != 0 ? 'estvivante':'') + '" id="' + i + '-' + j + '" data-row="' + i + '" data-col="' + j + '"></td>');
+            maLigne.append(maCellule);
+            vueTableau[i][j] = maCellule;
         }
-        modal+='</tr>'
+        tableContainer.append(maLigne);
     }
-    modal+='</tbody></table>'
-    $('#table').html(modal);
 }
 
-function defineCase(){
-    $("td").click(function() {
-        console.log("click");
-        var val = $(this).attr('value');
-
-        if (val == "0") {
-            $(this).css("background-color","black");
-            $(this).attr("value", "1");
-        }else {
-            $(this).css("background-color","white");
-            $(this).attr("value", "0");
-        }
-    });
-}
 
 function getVoisins(row, col) {
     // fonction pour obtenir les voisins de la cellule
-    return [
-        row - 1 < 0 || col - 1 < 0 ? false : [row - 1]+'-'+[col - 1],
-        row - 1 < 0 ? false : [row - 1]+'-'+[col],
-        row - 1 < 0 || col + 1 >= nbCol ? false : [row - 1]+'-'+[col + 1],
-        col - 1 < 0 ? false : [row]+'-'+[col - 1],
-        col + 1 >= nbCol ? false : [row]+'-'+[col + 1],
-        row + 1 >= nbRow || col - 1 < 0 ? false : [row + 1]+'-'+[col - 1],
-        row + 1 >= nbRow ? false : [row + 1]+'-'+[col],
-        row + 1 >= nbRow || col + 1 >= nbCol? false : [row + 1]+'-'+[col + 1],
-    ]
+    var valeurDeRetour = [],
+        lignePrecedente = row - 1,
+        ligneSuivante = row + 1,
+        colonnePrecedente = col - 1,
+        colonneSuivante = col + 1;
+    // Traitement de la ligne précédente
+    if (lignePrecedente >= 0) {
+        if (colonnePrecedente >= 0) {
+            valeurDeRetour.push(vueTableau[lignePrecedente][colonnePrecedente]);
+        }
+        valeurDeRetour.push(vueTableau[lignePrecedente][col]);
+        if (colonneSuivante < nbCol) {
+            valeurDeRetour.push(vueTableau[lignePrecedente][colonneSuivante]);
+        }
+    }
+    // Traitement de la ligne en cours
+    if (colonnePrecedente >= 0) {
+        valeurDeRetour.push(vueTableau[row][colonnePrecedente]);
+    }
+    if (colonneSuivante < nbCol) {
+        valeurDeRetour.push(vueTableau[row][colonneSuivante]);
+    }
+    // Traitement de la ligne précédente
+    if (ligneSuivante < nbRow) {
+        if (colonnePrecedente >= 0) {
+            valeurDeRetour.push(vueTableau[ligneSuivante][colonnePrecedente]);
+        }
+        valeurDeRetour.push(vueTableau[ligneSuivante][col]);
+        if (colonneSuivante < nbCol) {
+            valeurDeRetour.push(vueTableau[ligneSuivante][colonneSuivante]);
+        }
+    }
+    return valeurDeRetour;
 }
 
 function checkCelluleStayAlive(tableGetVoisins, caseValue){
     var tableCellulesVivantes = [];
-    var NbcellsNoiresVoisinnes=0;
+    var NbcellsNoiresVoisinnes = 0;
 
-    $.each(tableGetVoisins, function(index, id){
-        var value = $('#'+id).attr("value");
-        if (value == 1) {
+    $.each(tableGetVoisins, function(index, maCellule) {
+        if (this.hasClass("estvivante")) {
             NbcellsNoiresVoisinnes++;
         }
     });
@@ -93,93 +106,48 @@ function checkCelluleStayAlive(tableGetVoisins, caseValue){
 
 function CheckNaissance(tableGetVoisins){
     var tableCellulesNaissantes = [];
-    $.each(tableGetVoisins, function(index, value){
-        // obtenir les voisines des cellules voisines
-        var coord = value.split('-');
-        var row = parseInt(coord[0]);
-        var col = parseInt(coord[1]);
-        var tableGetVoisinsVoisins = getVoisins(row, col);
-
-        var NbcellsNoiresVoisinnes=0;
-        $.each(tableGetVoisinsVoisins, function(index, id){
-            var val = $('#'+id).attr("value");
-            if (val == 1) {
+    $.each(tableGetVoisins, function() {
+        var tableGetVoisinsVoisins = getVoisins(this.data('row'), this.data('col')),
+            NbcellsNoiresVoisinnes = 0;
+        $.each(tableGetVoisinsVoisins, function() {
+            if (this.hasClass("estvivante")) {
                 NbcellsNoiresVoisinnes++;
             }
         });
-
-        if (NbcellsNoiresVoisinnes == 3) {
+        if (NbcellsNoiresVoisinnes == 3 && !this.hasClass('estvivante')) {
             // la case prend vie
-            tableCellulesNaissantes.push(value);
+            tableCellulesNaissantes.push(this);
         }
     });
-
-    // enlève les cases déjà noires
-    $.each(tableCellulesNaissantes, function(index, id){
-        var val = $('#'+id).attr("value");
-        if (val == 1) {
-            var z = tableCellulesNaissantes.indexOf(false);
-            if (z !== -1) {
-                tableGetVoisins.splice(z, 1);
-            }
-        }
-    });
-
-    return tableCellulesNaissantes
+    return tableCellulesNaissantes;
 }
 
 function updateFront(TableCellules){
-    var html = $("#dataTable").get(0);
     // tout setup a blanc puis set les bonnes cellules a noir
-    for (var i = 0; i < html.rows.length; i++) {
-        for (var j = 0; j < html.rows[i].cells.length; j++) {
-            $(html.rows[i].cells[j]).css("background-color","white");
-            $(html.rows[i].cells[j]).attr("value", "0");
-        }
-    }
-    for (var z = 0; z < TableCellules.length; z++) {
-        $('#'+TableCellules[z]).css("background-color","black");
-        $('#'+TableCellules[z]).attr("value", "1");
-    }
+    laTable.find('td').removeClass('estvivante');
+    $.each(TableCellules, function() {
+        this.addClass('estvivante');
+    });
 }
 
 function play(){
     var tableCells = [];
-    var tableCellulesVivantes = [];
-    var tableCellulesNaissantes = [];
     var tableCheckCelluleStayAlive = [];
     var tableCheckNaissance = [];
     var tableConcateneAliveEtNaissance = [];
 
-    var html = $("#dataTable").get(0);
-    for (var i = 0; i < html.rows.length; i++) {
-        for (var j = 0; j < html.rows[i].cells.length; j++) {
-            if ($(html.rows[i].cells[j]).attr("value") == 1) {
-                tableCells.push($(html.rows[i].cells[j]).attr("id"));
-            }
-        }
-    }
+    tableCells = laTable.find('.estvivante');
 
-    $.each(tableCells, function(index, value){
-        var coord = value.split('-');
-        var row = parseInt(coord[0]);
-        var col = parseInt(coord[1]);
-        var tableGetVoisins = getVoisins(row, col);
-
-        $.each(tableGetVoisins, function(){
-            //enlèvement des cellules non voisines
-            var z = tableGetVoisins.indexOf(false);
-            if (z !== -1) {
-                tableGetVoisins.splice(z, 1);
-            }
-        });
-        tableCheckCelluleStayAlive = checkCelluleStayAlive(tableGetVoisins, value);
+    tableCells.each(function() {
+        var maCellule = $(this);
+        var tableGetVoisins = getVoisins(maCellule.data('row'), maCellule.data('col'));
+        tableCheckCelluleStayAlive = checkCelluleStayAlive(tableGetVoisins, maCellule);
         tableCheckNaissance = CheckNaissance(tableGetVoisins);
         tableConcateneAliveEtNaissance = tableConcateneAliveEtNaissance.concat(tableCheckCelluleStayAlive, tableCheckNaissance);
     });
 
     // enlèvement des doublons
-    var tableConcateneAliveEtNaissance = tableConcateneAliveEtNaissance.filter(function(a, b) {
+    tableConcateneAliveEtNaissance = tableConcateneAliveEtNaissance.filter(function(a, b) {
         return tableConcateneAliveEtNaissance.indexOf(a) == b;
     });
 
