@@ -35,7 +35,7 @@ $(document).ready(function () {
 function setTable(){
     var maLigne = null,
         maCellule = null,
-        tableContainer = laTable.find('tbody');
+        tableContainer = laTable.find('tbody').empty();
     vueTableau = new Array(nbRow);
     for (var i = 0; i < nbRow; i++) {
         maLigne = $('<tr></tr>');
