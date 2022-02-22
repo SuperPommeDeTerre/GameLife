@@ -3,47 +3,21 @@ var nbRow = 100,
     nIntervId,
     nbGeneration=0,
     vueTableau = [],
+    nbVoisins = [],
     laTable = null,
     generationContainer = null;
 
-$(document).ready(function () {
-    laTable = $('#dataTable');
-    generationContainer = $('#generation');
-
-    setTable();
-
-    $('#start').click(function(){
-        if (!nIntervId) {
-            nIntervId = setInterval(play, 400);
-        }
-    });
-
-    $('#pause').click(function(){
-        clearInterval(nIntervId);
-        nIntervId = null;
-    });
-
-    $('#restart').click(function(){
-        clearInterval(nIntervId);
-        nIntervId = null;
-        nbGeneration = 0;
-        generationContainer.val(nbGeneration);
-        setTable();
-    });
-
-    $('#dataTable').on('click', 'td', function(e) {
-        $(this).toggleClass('estvivante');
-    });
-});
-
-function setTable(){
+var setTable = function() {
     var maLigne = null,
         maCellule = null,
         tableContainer = laTable.find('tbody').empty();
     vueTableau = new Array(nbRow);
+    nbVoisins = new Array(nbRow);
     for (var i = 0; i < nbRow; i++) {
         maLigne = $('<tr></tr>');
         vueTableau[i] = new Array(nbCol);
+        nbVoisins[i] = new Array(nbCol);
+        nbVoisins[i].fill(0);
         for (var j = 0; j < nbCol; j++) {
             var color = Math.floor(Math.random() * 2);
             maCellule = $('<td class="' + (color != 0 ? 'estvivante':'') + '" id="' + i + '-' + j + '" data-row="' + i + '" data-col="' + j + '"></td>');
@@ -52,10 +26,11 @@ function setTable(){
         }
         tableContainer.append(maLigne);
     }
+    nbGeneration = 0;
+    generationContainer.val(nbGeneration);
 }
 
-
-function getVoisins(row, col) {
+var getVoisins = function(row, col) {
     // fonction pour obtenir les voisins de la cellule
     var valeurDeRetour = [],
         lignePrecedente = row - 1,
@@ -92,12 +67,12 @@ function getVoisins(row, col) {
     return valeurDeRetour;
 }
 
-function checkCelluleStayAlive(tableGetVoisins, caseValue){
+var checkCelluleStayAlive = function(tableGetVoisins, caseValue){
     var tableCellulesVivantes = [];
     var NbcellsNoiresVoisinnes = 0;
 
-    $.each(tableGetVoisins, function(index, maCellule) {
-        if (this.hasClass("estvivante")) {
+    $.each(tableGetVoisins, function() {
+        if (this.hasClass('estvivante')) {
             NbcellsNoiresVoisinnes++;
         }
     });
@@ -108,25 +83,25 @@ function checkCelluleStayAlive(tableGetVoisins, caseValue){
     return tableCellulesVivantes;
 }
 
-function CheckNaissance(tableGetVoisins){
-    var tableCellulesNaissantes = [];
-    $.each(tableGetVoisins, function() {
-        var tableGetVoisinsVoisins = getVoisins(this.data('row'), this.data('col')),
-            NbcellsNoiresVoisinnes = 0;
-        $.each(tableGetVoisinsVoisins, function() {
-            if (this.hasClass("estvivante")) {
-                NbcellsNoiresVoisinnes++;
+var CheckNaissance = function() {
+    var i = null,
+        j = null,
+        tableCellulesNaissantes = [],
+        ligneEncours = null,
+        celluleEnCours = null;
+    for (i = 0; i < vueTableau.length; i++) {
+        ligneEncours = vueTableau[i];
+        for (j = 0; j < ligneEncours.length; j++) {
+            celluleEnCours = ligneEncours[j];
+            if (!celluleEnCours.hasClass('estvivante') && nbVoisins[i][j] == 3) {
+                tableCellulesNaissantes.push(celluleEnCours);
             }
-        });
-        if (NbcellsNoiresVoisinnes == 3 && !this.hasClass('estvivante')) {
-            // la case prend vie
-            tableCellulesNaissantes.push(this);
         }
-    });
+    }
     return tableCellulesNaissantes;
 }
 
-function updateFront(TableCellules){
+var updateFront = function(TableCellules) {
     // tout setup a blanc puis set les bonnes cellules a noir
     laTable.find('td').removeClass('estvivante');
     $.each(TableCellules, function() {
@@ -134,27 +109,60 @@ function updateFront(TableCellules){
     });
 }
 
-function play() {
-    var tableCheckCelluleStayAlive = [],
-        tableCheckNaissance = [],
-        tableConcateneAliveEtNaissance = [],
+var play = function() {
+    var tableCellulesVivantesGenerationSuivante = [],
         elems = laTable[0].getElementsByClassName('estvivante'),
         i = null,
+        j = null,
         maCellule = null;
     for (i = 0; i<elems.length; i++) {
         maCellule = $(elems.item(i));
         var tableGetVoisins = getVoisins(maCellule.data('row'), maCellule.data('col'));
-        tableCheckCelluleStayAlive = checkCelluleStayAlive(tableGetVoisins, maCellule);
-        tableCheckNaissance = CheckNaissance(tableGetVoisins);
-        tableConcateneAliveEtNaissance = tableConcateneAliveEtNaissance.concat(tableCheckCelluleStayAlive, tableCheckNaissance);
+        for (j = 0; j < tableGetVoisins.length; j++) {
+            // Si la cellule adjacente n'est pas vivante, alors on incrémente son nombre de voisins.
+            // Ce sera utilisé lors du calcul des naissances.
+            if (!tableGetVoisins[j].hasClass('estvivante')) {
+                nbVoisins[tableGetVoisins[j].data('row')][tableGetVoisins[j].data('col')]++;
+            }
+        }
+        tableCellulesVivantesGenerationSuivante = tableCellulesVivantesGenerationSuivante.concat(checkCelluleStayAlive(tableGetVoisins, maCellule));
     }
+    // On calcule les naissances en une fois.
+    tableCellulesVivantesGenerationSuivante = tableCellulesVivantesGenerationSuivante.concat(CheckNaissance());
 
-    // enlèvement des doublons
-    tableConcateneAliveEtNaissance = tableConcateneAliveEtNaissance.filter(function(a, b) {
-        return tableConcateneAliveEtNaissance.indexOf(a) == b;
-    });
-
-    updateFront(tableConcateneAliveEtNaissance);
+    updateFront(tableCellulesVivantesGenerationSuivante);
+    // Reset du nombre des voisins
+    for (i = 0; i < nbVoisins.length; i++) {
+        nbVoisins[i].fill(0);
+    }
     nbGeneration++;
     generationContainer.val(nbGeneration);
 }
+
+$(function() {
+    laTable = $('#dataTable');
+    generationContainer = $('#generation');
+
+    setTable();
+
+    $('#start').click(function(){
+        if (!nIntervId) {
+            nIntervId = setInterval(play, 400);
+        }
+    });
+
+    $('#pause').click(function(){
+        clearInterval(nIntervId);
+        nIntervId = null;
+    });
+
+    $('#restart').click(function(){
+        clearInterval(nIntervId);
+        nIntervId = null;
+        setTable();
+    });
+
+    $('#dataTable').on('click', 'td', function(e) {
+        $(this).toggleClass('estvivante');
+    });
+});
