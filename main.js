@@ -42,8 +42,8 @@ var setTable = function() {
     var ts1 = performance.now(),
         ts2 = null,
         html = '',
-        tableContainer = laTable.find('tbody').empty(),
         i = null;
+    laTable.empty();
     vueTableau = new Array(nbRow);
     nbVoisins = new Array(nbRow);
     for (i = 0; i < nbRow; i++) {
@@ -57,8 +57,8 @@ var setTable = function() {
         }
         html += '</tr>';
     }
-    tableContainer.append(html);
-    var cells = tableContainer[0].getElementsByTagName('td');
+    laTable.append(html);
+    var cells = laTable[0].getElementsByTagName('td');
     for (i = 0; i < cells.length; i++) {
         var maCellule = cells[i];
         vueTableau[maCellule.dataset.row][maCellule.dataset.col] = $(maCellule);
@@ -122,13 +122,14 @@ var getVoisins = function(row, col) {
  */
 var checkCelluleStayAlive = function(tableGetVoisins, caseValue){
     var valeurDeRetour = false,
-        NbcellsNoiresVoisinnes = 0;
+        NbcellsNoiresVoisinnes = 0,
+        i = null;
 
-    $.each(tableGetVoisins, function() {
-        if (this.hasClass('estvivante')) {
+    for (i = 0; i < tableGetVoisins.length; i++) {
+        if (tableGetVoisins[i].hasClass('estvivante')) {
             NbcellsNoiresVoisinnes++;
         }
-    });
+    }
     if (NbcellsNoiresVoisinnes == 2 || NbcellsNoiresVoisinnes == 3) {
         // la case reste vivante
         valeurDeRetour = true;
@@ -176,7 +177,9 @@ var updateFront = function(TableCellules) {
  * Boucle principale
  */
 var play = function() {
-    var tableCellulesVivantesGenerationSuivante = [],
+    var ts1 = performance.now(),
+        ts2 = null,
+        tableCellulesVivantesGenerationSuivante = [],
         elems = laTable[0].getElementsByClassName('estvivante'),
         i = null,
         j = null,
@@ -205,10 +208,12 @@ var play = function() {
     }
     nbGeneration++;
     generationContainer.val(nbGeneration);
+    ts2 = performance.now();
+    console.log('play: ' + (ts2 - ts1) + 'ms');
 }
 
 $(function() {
-    laTable = $('#dataTable');
+    laTable = $('#dataTable tbody');
     generationContainer = $('#generation');
     $('[data-bs-toggle="tooltip"]').tooltip();
 
