@@ -113,52 +113,50 @@ var getVoisins = function(row, col) {
     return valeurDeRetour;
 }
 
+var updateNbVoisins = function() {
+    var elems = laTable[0].getElementsByClassName('estvivante'),
+        i = null,
+        j = null,
+        maCellule = null;
+    for (i = 0; i<elems.length; i++) {
+        maCellule = $(elems.item(i));
+        var tableGetVoisins = getVoisins(maCellule.data('row'), maCellule.data('col'));
+        for (j = 0; j < tableGetVoisins.length; j++) {
+            // Si la cellule adjacente n'est pas vivante, alors on incrémente son nombre de voisins.
+            // Ce sera utilisé lors du calcul des naissances et.
+            nbVoisins[tableGetVoisins[j].data('row')][tableGetVoisins[j].data('col')]++;
+        }
+    }
+};
+
 /**
  * Vérification si une cellule reste en vie à la prochaine itération.
  * 
- * @param {array<jQuery>} tableGetVoisins Liste des cellule adjacentes à la cellule
- * @param {jQuery} caseValue Objet jQuery de la cellule à tester
- * @returns {boolean} <true> si la case reste vivante et <false> sinon
+ * @returns {array<jQuery>} Liste des cases vivantes à la prochaine itération
  */
-var checkCelluleStayAlive = function(tableGetVoisins, caseValue){
-    var valeurDeRetour = false,
-        NbcellsNoiresVoisinnes = 0,
-        i = null;
-
-    for (i = 0; i < tableGetVoisins.length; i++) {
-        if (tableGetVoisins[i].hasClass('estvivante')) {
-            NbcellsNoiresVoisinnes++;
-        }
-    }
-    if (NbcellsNoiresVoisinnes == 2 || NbcellsNoiresVoisinnes == 3) {
-        // la case reste vivante
-        valeurDeRetour = true;
-    }
-    return valeurDeRetour;
-}
-
-/**
- * Calcul des cellules qui vont naître à la prochaine itération.
- * 
- * @returns {array<jQuery>} Tableau contenant les objets jQuery des cellules qui vont naître.
- */
-var CheckNaissance = function() {
+ var getAliveCells = function() {
     var i = null,
         j = null,
-        tableCellulesNaissantes = [],
+        tableCellulesAlive = [],
         ligneEncours = null,
-        celluleEnCours = null;
+        celluleEnCours = null,
+        estCelluleVivante = true,
+        lNbVoisins = 0;
     for (i = 0; i < vueTableau.length; i++) {
         ligneEncours = vueTableau[i];
         for (j = 0; j < ligneEncours.length; j++) {
             celluleEnCours = ligneEncours[j];
-            if (!celluleEnCours.hasClass('estvivante') && nbVoisins[i][j] == 3) {
-                tableCellulesNaissantes.push(celluleEnCours);
+            estCelluleVivante = celluleEnCours.hasClass('estvivante');
+            lNbVoisins = nbVoisins[i][j];
+            // Si la cellule n'est pas vivante, mais qu'elle à 3 voisins, c'est une naissance.
+            // Si la cellule est vivante et qu'elle a deux ou trois voisins, elle reste en vie.
+            if ((!estCelluleVivante && lNbVoisins == 3) || (estCelluleVivante && (lNbVoisins == 2 || lNbVoisins == 3))) {
+                tableCellulesAlive.push(celluleEnCours);
             }
         }
     }
-    return tableCellulesNaissantes;
-}
+    return tableCellulesAlive;
+};
 
 /**
  * Mise à jour du DOM avec les élements de la nouvelle itération.
@@ -180,28 +178,16 @@ var play = function() {
     var ts1 = performance.now(),
         ts2 = null,
         tableCellulesVivantesGenerationSuivante = [],
-        elems = laTable[0].getElementsByClassName('estvivante'),
-        i = null,
-        j = null,
-        maCellule = null;
-    for (i = 0; i<elems.length; i++) {
-        maCellule = $(elems.item(i));
-        var tableGetVoisins = getVoisins(maCellule.data('row'), maCellule.data('col'));
-        for (j = 0; j < tableGetVoisins.length; j++) {
-            // Si la cellule adjacente n'est pas vivante, alors on incrémente son nombre de voisins.
-            // Ce sera utilisé lors du calcul des naissances.
-            if (!tableGetVoisins[j].hasClass('estvivante')) {
-                nbVoisins[tableGetVoisins[j].data('row')][tableGetVoisins[j].data('col')]++;
-            }
-        }
-        if (checkCelluleStayAlive(tableGetVoisins, maCellule)) {
-            tableCellulesVivantesGenerationSuivante.push(maCellule);
-        }
-    }
-    // On calcule les naissances en une fois.
-    tableCellulesVivantesGenerationSuivante = tableCellulesVivantesGenerationSuivante.concat(CheckNaissance());
+        i = null;
+    // Mise à jour du nombre des voisins
+    updateNbVoisins();
 
+    // Calcul des cellules vivantes en fonction des voisins.
+    tableCellulesVivantesGenerationSuivante = getAliveCells();
+
+    // Mise à jour de l'IHM
     updateFront(tableCellulesVivantesGenerationSuivante);
+
     // Reset du nombre des voisins
     for (i = 0; i < nbVoisins.length; i++) {
         nbVoisins[i].fill(0);
