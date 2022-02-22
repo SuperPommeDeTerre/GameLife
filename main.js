@@ -113,6 +113,9 @@ var getVoisins = function(row, col) {
     return valeurDeRetour;
 }
 
+/**
+ * Calcul global du nombre de voisins.
+ */
 var updateNbVoisins = function() {
     var elems = laTable[0].getElementsByClassName('estvivante'),
         i = null,
