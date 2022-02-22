@@ -1,35 +1,74 @@
-var nbRow = 100,
-    nbCol = 100,
-    nIntervId,
-    nbGeneration=0,
-    vueTableau = [],
-    nbVoisins = [],
-    laTable = null,
-    generationContainer = null;
+/**
+ * Nombre de lignes du tableau par défaut
+ */
+var nbRow = 100;
+/**
+ * Nombre de colonnes du tableau par défaut
+ */
+var nbCol = 100;
+/**
+ * Pointeur vers l'intervalle de temps défini (temps d'itération)
+ */
+var nIntervId;
+/**
+ * Temps de l'intervalle de chaque génération
+ */
+var nIntervalTime = 200;
+/**
+ * Numéro de la génration en cours
+ */
+var nbGeneration=0;
+/**
+ * Tableau de stockage des éléments jQuery des cellules du tableau (pour éviter les interrogations du DOM)
+ */
+var vueTableau = [];
+/**
+ * Tableau de stockage du nombre de voisins vivants de chaque cellule
+ */
+var nbVoisins = [];
+/**
+ * Objet jQuery de l'élément DOM de la table
+ */
+var laTable = null;
+/**
+ * Objet jQuery de l'élément DOM du compteur de génération
+ */
+var generationContainer = null;
 
+/**
+ * Fonction d'initialisation de la table
+ */
 var setTable = function() {
-    var maLigne = null,
-        maCellule = null,
+    var html = '',
         tableContainer = laTable.find('tbody').empty();
     vueTableau = new Array(nbRow);
     nbVoisins = new Array(nbRow);
     for (var i = 0; i < nbRow; i++) {
-        maLigne = $('<tr></tr>');
+        html += '<tr>';
         vueTableau[i] = new Array(nbCol);
         nbVoisins[i] = new Array(nbCol);
         nbVoisins[i].fill(0);
         for (var j = 0; j < nbCol; j++) {
             var color = Math.floor(Math.random() * 2);
-            maCellule = $('<td class="' + (color != 0 ? 'estvivante':'') + '" id="' + i + '-' + j + '" data-row="' + i + '" data-col="' + j + '"></td>');
-            maLigne.append(maCellule);
-            vueTableau[i][j] = maCellule;
+            html += '<td class="' + (color != 0 ? 'estvivante':'') + '" id="' + i + '-' + j + '" data-row="' + i + '" data-col="' + j + '"></td>';
         }
-        tableContainer.append(maLigne);
+        html += '</tr>';
     }
+    tableContainer.append(html);
+    tableContainer.find('td').each(function() {
+        vueTableau[this.parentNode.rowIndex][this.cellIndex] = $(this);
+    });
     nbGeneration = 0;
     generationContainer.val(nbGeneration);
 }
 
+/**
+ * Récupère la liste des cellules voisines d'une case
+ * 
+ * @param {int} row Numéro de ligne de la cellule
+ * @param {int} col Numéro de colonne de la cellule
+ * @returns {array<jQuery>} Liste des objets jQuery des cellules adjacentes
+ */
 var getVoisins = function(row, col) {
     // fonction pour obtenir les voisins de la cellule
     var valeurDeRetour = [],
@@ -67,8 +106,15 @@ var getVoisins = function(row, col) {
     return valeurDeRetour;
 }
 
+/**
+ * Vérification si une cellule reste en vie à la prochaine itération.
+ * 
+ * @param {array<jQuery>} tableGetVoisins Liste des cellule adjacentes à la cellule
+ * @param {jQuery} caseValue Objet jQuery de la cellule à tester
+ * @returns {boolean} <true> si la case reste vivante et <false> sinon
+ */
 var checkCelluleStayAlive = function(tableGetVoisins, caseValue){
-    var tableCellulesVivantes = [];
+    var valeurDeRetour = false;
     var NbcellsNoiresVoisinnes = 0;
 
     $.each(tableGetVoisins, function() {
@@ -78,11 +124,16 @@ var checkCelluleStayAlive = function(tableGetVoisins, caseValue){
     });
     if (NbcellsNoiresVoisinnes == 2 || NbcellsNoiresVoisinnes == 3) {
         // la case reste vivante
-        tableCellulesVivantes.push(caseValue);
+        valeurDeRetour = true;
     }
-    return tableCellulesVivantes;
+    return valeurDeRetour;
 }
 
+/**
+ * Calcul des cellules qui vont naître à la prochaine itération.
+ * 
+ * @returns {array<jQuery>} Tableau contenant les objets jQuery des cellules qui vont naître.
+ */
 var CheckNaissance = function() {
     var i = null,
         j = null,
@@ -101,6 +152,11 @@ var CheckNaissance = function() {
     return tableCellulesNaissantes;
 }
 
+/**
+ * Mise à jour du DOM avec les élements de la nouvelle itération.
+ * 
+ * @param {array<jQuery>} TableCellules Tableau contenant les cellules qui seront vivantes à la prochaine itération
+ */
 var updateFront = function(TableCellules) {
     // tout setup a blanc puis set les bonnes cellules a noir
     laTable.find('td').removeClass('estvivante');
@@ -109,6 +165,9 @@ var updateFront = function(TableCellules) {
     });
 }
 
+/**
+ * Boucle principale
+ */
 var play = function() {
     var tableCellulesVivantesGenerationSuivante = [],
         elems = laTable[0].getElementsByClassName('estvivante'),
@@ -125,7 +184,9 @@ var play = function() {
                 nbVoisins[tableGetVoisins[j].data('row')][tableGetVoisins[j].data('col')]++;
             }
         }
-        tableCellulesVivantesGenerationSuivante = tableCellulesVivantesGenerationSuivante.concat(checkCelluleStayAlive(tableGetVoisins, maCellule));
+        if (checkCelluleStayAlive(tableGetVoisins, maCellule)) {
+            tableCellulesVivantesGenerationSuivante.push(maCellule);
+        }
     }
     // On calcule les naissances en une fois.
     tableCellulesVivantesGenerationSuivante = tableCellulesVivantesGenerationSuivante.concat(CheckNaissance());
@@ -142,21 +203,22 @@ var play = function() {
 $(function() {
     laTable = $('#dataTable');
     generationContainer = $('#generation');
+    $('[data-bs-toggle="tooltip"]').tooltip();
 
     setTable();
 
-    $('#start').click(function(){
+    $('#start').click(function() {
         if (!nIntervId) {
-            nIntervId = setInterval(play, 400);
+            nIntervId = setInterval(play, nIntervalTime);
         }
     });
 
-    $('#pause').click(function(){
+    $('#pause').click(function() {
         clearInterval(nIntervId);
         nIntervId = null;
     });
 
-    $('#restart').click(function(){
+    $('#restart').click(function() {
         clearInterval(nIntervId);
         nIntervId = null;
         setTable();
