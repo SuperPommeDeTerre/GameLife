@@ -39,11 +39,14 @@ var generationContainer = null;
  * Fonction d'initialisation de la table
  */
 var setTable = function() {
-    var html = '',
-        tableContainer = laTable.find('tbody').empty();
+    var ts1 = performance.now(),
+        ts2 = null,
+        html = '',
+        tableContainer = laTable.find('tbody').empty(),
+        i = null;
     vueTableau = new Array(nbRow);
     nbVoisins = new Array(nbRow);
-    for (var i = 0; i < nbRow; i++) {
+    for (i = 0; i < nbRow; i++) {
         html += '<tr>';
         vueTableau[i] = new Array(nbCol);
         nbVoisins[i] = new Array(nbCol);
@@ -55,11 +58,15 @@ var setTable = function() {
         html += '</tr>';
     }
     tableContainer.append(html);
-    tableContainer.find('td').each(function() {
-        vueTableau[this.parentNode.rowIndex][this.cellIndex] = $(this);
-    });
+    var cells = tableContainer[0].getElementsByTagName('td');
+    for (i = 0; i < cells.length; i++) {
+        var maCellule = cells[i];
+        vueTableau[maCellule.dataset.row][maCellule.dataset.col] = $(maCellule);
+    }
     nbGeneration = 0;
     generationContainer.val(nbGeneration);
+    ts2 = performance.now();
+    console.log('setTable : ' + (ts2 - ts1) + 'ms');
 }
 
 /**
@@ -114,8 +121,8 @@ var getVoisins = function(row, col) {
  * @returns {boolean} <true> si la case reste vivante et <false> sinon
  */
 var checkCelluleStayAlive = function(tableGetVoisins, caseValue){
-    var valeurDeRetour = false;
-    var NbcellsNoiresVoisinnes = 0;
+    var valeurDeRetour = false,
+        NbcellsNoiresVoisinnes = 0;
 
     $.each(tableGetVoisins, function() {
         if (this.hasClass('estvivante')) {
