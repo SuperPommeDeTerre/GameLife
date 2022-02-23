@@ -44,6 +44,8 @@ var setTable = function() {
         html = '',
         i = null;
     laTable.empty();
+    nbRow = parseInt(document.getElementById('nblignes').value);
+    nbCol = parseInt(document.getElementById('nbcolonnes').value);
     vueTableau = new Array(nbRow);
     nbVoisins = new Array(nbRow);
     for (i = 0; i < nbRow; i++) {
@@ -122,8 +124,8 @@ var updateNbVoisins = function() {
         j = null,
         maCellule = null;
     for (i = 0; i<elems.length; i++) {
-        maCellule = $(elems.item(i));
-        var tableGetVoisins = getVoisins(maCellule.data('row'), maCellule.data('col'));
+        maCellule = elems.item(i);
+        var tableGetVoisins = getVoisins(maCellule.dataset.row, maCellule.dataset.col);
         for (j = 0; j < tableGetVoisins.length; j++) {
             // Si la cellule adjacente n'est pas vivante, alors on incrémente son nombre de voisins.
             // Ce sera utilisé lors du calcul des naissances et.
@@ -145,9 +147,9 @@ var updateNbVoisins = function() {
         celluleEnCours = null,
         estCelluleVivante = true,
         lNbVoisins = 0;
-    for (i = 0; i < vueTableau.length; i++) {
+    for (i = 0; i < nbRow; i++) {
         ligneEncours = vueTableau[i];
-        for (j = 0; j < ligneEncours.length; j++) {
+        for (j = 0; j < nbCol; j++) {
             celluleEnCours = ligneEncours[j];
             estCelluleVivante = celluleEnCours.hasClass('estvivante');
             lNbVoisins = nbVoisins[i][j];
@@ -172,6 +174,12 @@ var updateFront = function(TableCellules) {
     $.each(TableCellules, function() {
         this.addClass('estvivante');
     });
+    // Plus aucune cellule de vivante. On arrête là...
+    if (TableCellules.length == 0) {
+        document.getElementById('alerteDeFin').innerHTML = '<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
+        clearInterval(nIntervId);
+        nIntervId = null;
+    }
 }
 
 /**
@@ -192,7 +200,7 @@ var play = function() {
     updateFront(tableCellulesVivantesGenerationSuivante);
 
     // Reset du nombre des voisins
-    for (i = 0; i < nbVoisins.length; i++) {
+    for (i = 0; i < nbRow; i++) {
         nbVoisins[i].fill(0);
     }
     nbGeneration++;
@@ -204,22 +212,26 @@ var play = function() {
 $(function() {
     laTable = $('#dataTable tbody');
     generationContainer = $('#generation');
-    $('[data-bs-toggle="tooltip"]').tooltip();
+
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')),
+        tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
 
     setTable();
 
-    $('#start').click(function() {
+    $('#start').on('click', function() {
         if (!nIntervId) {
             nIntervId = setInterval(play, nIntervalTime);
         }
     });
 
-    $('#pause').click(function() {
+    $('#pause').on('click', function() {
         clearInterval(nIntervId);
         nIntervId = null;
     });
 
-    $('#restart').click(function() {
+    $('#restart').on('click', function() {
         clearInterval(nIntervId);
         nIntervId = null;
         setTable();

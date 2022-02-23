@@ -15,16 +15,24 @@
                 <div class="col-auto">
                     <div class="btn-toolbar" role="toolbar" aria-label="Barre de contr&ocirc;le et d'information">
                         <div class="btn-group me-2" role="group" aria-label="Contr&ocirc;les">
-                            <button type="button" name="button" class="btn btn-primary" data-bs-toggle="tooltip" id="start" title="Démarrer"><span class="fa-solid fa-play"></span></button>
-                            <button type="button" name="button" class="btn btn-primary" data-bs-toggle="tooltip" id="pause" title="Mettre en pause"><span class="fa-solid fa-pause"></span></button>
-                            <button type="button" name="button" class="btn btn-primary" data-bs-toggle="tooltip" id="restart" title="Redémarrer"><span class="fa-solid fa-arrows-rotate"></span></button>
+                            <button type="button" name="button" class="btn btn-primary" id="start" title="Démarrer"><span class="fa-solid fa-play"></span></button>
+                            <button type="button" name="button" class="btn btn-primary" id="pause" title="Mettre en pause"><span class="fa-solid fa-pause"></span></button>
+                            <button type="button" name="button" class="btn btn-primary" id="restart" title="Redémarrer"><span class="fa-solid fa-arrows-rotate"></span></button>
                         </div>
-                        <div class="input-group">
+                        <div class="input-group me-2">
                             <div class="input-group-text" id="generationLabel"><span class="fa-solid fa-hashtag"></span></div>
                             <input type="text" class="form-control" aria-label="Num&eacute;ro de g&eacute;n&eacute;ration" id="generation" aria-describedby="generationLabel" disabled>
                         </div>
+                        <div class="input-group me-2">
+                            <div class="input-group-text" id="nbLignesLabel"><span class="fa-solid fa-grip-lines"></span></div>
+                            <input type="number" class="form-control" aria-label="Nombre de lignes" id="nblignes" min="10" max="100" value="100" aria-describedby="nbLignesLabel">
+                            <div class="input-group-text" id="nbColonnesLabel"><span class="fa-solid fa-grip-lines-vertical"></span></div>
+                            <input type="number" class="form-control" aria-label="Nombre de colonnes" id="nbcolonnes" min="10" max="100" value="100" aria-describedby="nbColonnesLabel">
+                        </div>
                     </div>
                 </div>
+            </div>
+            <div class="row justify-content-center" id="alerteDeFin">
             </div>
             <div class="row justify-content-center">
                 <div class="col-auto">
