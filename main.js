@@ -50,7 +50,7 @@ var initGame = function() {
         ts2 = null,
         html = '',
         i = null;
-    laTable.empty();
+    laTable.innerHTML = '';
     nbRow = parseInt(document.getElementById('nblignes').value);
     nbCol = parseInt(document.getElementById('nbcolonnes').value);
     vueTableau = new Array(nbRow);
@@ -66,14 +66,14 @@ var initGame = function() {
         }
         html += '</tr>';
     }
-    laTable.append(html);
-    var cells = laTable[0].getElementsByTagName('td');
+    laTable.innerHTML= html;
+    var cells = laTable.getElementsByTagName('td');
     for (i = 0; i < cells.length; i++) {
         var maCellule = cells[i];
-        vueTableau[maCellule.dataset.row][maCellule.dataset.col] = $(maCellule);
+        vueTableau[maCellule.dataset.row][maCellule.dataset.col] = maCellule;
     }
     nbGeneration = 0;
-    generationContainer.val(nbGeneration);
+    generationContainer.value = nbGeneration;
     ts2 = performance.now();
     console.log('initGame : ' + (ts2 - ts1) + 'ms');
 }
@@ -128,7 +128,7 @@ var getVoisins = function(row, col) {
 var updateNbVoisins = function() {
     var ts1 = performance.now(),
         ts2 = null,
-        elems = laTable[0].getElementsByClassName('estvivante'),
+        elems = laTable.getElementsByClassName('estvivante'),
         i = null,
         j = null,
         maCellule = null,
@@ -138,7 +138,7 @@ var updateNbVoisins = function() {
         maCellule = elems[i];
         tableGetVoisins = getVoisins(parseInt(maCellule.dataset.row), parseInt(maCellule.dataset.col));
         for (j = 0; j < tableGetVoisins.length; j++) {
-            maCelluleVoisine = tableGetVoisins[j][0];
+            maCelluleVoisine = tableGetVoisins[j];
             // Si la cellule adjacente n'est pas vivante, alors on incrémente son nombre de voisins.
             // Ce sera utilisé lors du calcul des naissances et.
             nbVoisins[parseInt(maCelluleVoisine.dataset.row)][parseInt(maCelluleVoisine.dataset.col)]++;
@@ -167,7 +167,7 @@ var updateNbVoisins = function() {
         ligneEncours = vueTableau[i];
         for (j = 0; j < nbCol; j++) {
             celluleEnCours = ligneEncours[j];
-            estCelluleVivante = celluleEnCours[0].classList.contains('estvivante');
+            estCelluleVivante = celluleEnCours.classList.contains('estvivante');
             lNbVoisins = nbVoisins[i][j];
             // Si la cellule n'est pas vivante, mais qu'elle à 3 voisins, c'est une naissance.
             // Si la cellule est vivante et qu'elle a deux ou trois voisins, elle reste en vie.
@@ -195,11 +195,11 @@ var updateFront = function(TableCellules) {
         clearInterval(nIntervId);
         nIntervId = null;
     } else {
-        [].forEach.call(laTable[0].querySelectorAll('.estvivante'), function(el) {
+        [].forEach.call(laTable.querySelectorAll('.estvivante'), function(el) {
             el.classList.remove('estvivante');
         });
         [].forEach.call(TableCellules, function(el) {
-            el[0].classList.add('estvivante');
+            el.classList.add('estvivante');
         });
     }
     // Plus aucune cellule de vivante. On arrête là...
@@ -234,14 +234,14 @@ var play = function() {
         nbVoisins[i].fill(0);
     }
     nbGeneration++;
-    generationContainer.val(nbGeneration);
+    generationContainer.value = nbGeneration;
     ts2 = performance.now();
     console.log('play: ' + (ts2 - ts1) + 'ms');
 }
 
-$(function() {
-    laTable = $('#dataTable tbody');
-    generationContainer = $('#generation');
+document.addEventListener('DOMContentLoaded', function() {
+    laTable = document.getElementById('dataTable').firstChild;
+    generationContainer = document.getElementById('generation');
 
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')),
         tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
@@ -250,24 +250,32 @@ $(function() {
 
     initGame();
 
-    $('#start').on('click', function() {
+    document.getElementById('start').addEventListener('click', function() {
         if (!nIntervId) {
             nIntervId = setInterval(play, nIntervalTime);
         }
     });
 
-    $('#pause').on('click', function() {
+    document.getElementById('pause').addEventListener('click', function() {
         clearInterval(nIntervId);
         nIntervId = null;
     });
 
-    $('#restart').on('click', function() {
+    document.getElementById('restart').addEventListener('click', function() {
         clearInterval(nIntervId);
         nIntervId = null;
         initGame();
     });
 
-    $('#dataTable').on('click', 'td', function(e) {
-        $(this).toggleClass('estvivante');
+    document.getElementById('dataTable').addEventListener('click', function(e) {
+        // On ne prend que les click sur les cellules
+        var noeudClique = e.path[0];
+        if (noeudClique.nodeName == 'TD') {
+            if (noeudClique.classList.contains('estvivante')) {
+                noeudClique.classList.remove('estvivante');
+            } else {
+                noeudClique.classList.add('estvivante');
+            }
+        }
     });
-});
+}, false);
