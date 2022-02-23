@@ -17,7 +17,14 @@ var nIntervalTime = 200;
 /**
  * Numéro de la génration en cours
  */
-var nbGeneration=0;
+var nbGeneration = 0;
+/**
+ * Variable de stockage de l'état du jeu
+ */
+var gameState = {
+    cells: [],
+    voisins: []
+};
 /**
  * Tableau de stockage des éléments jQuery des cellules du tableau (pour éviter les interrogations du DOM)
  */
@@ -38,7 +45,7 @@ var generationContainer = null;
 /**
  * Fonction d'initialisation de la table
  */
-var setTable = function() {
+var initGame = function() {
     var ts1 = performance.now(),
         ts2 = null,
         html = '',
@@ -68,7 +75,7 @@ var setTable = function() {
     nbGeneration = 0;
     generationContainer.val(nbGeneration);
     ts2 = performance.now();
-    console.log('setTable : ' + (ts2 - ts1) + 'ms');
+    console.log('initGame : ' + (ts2 - ts1) + 'ms');
 }
 
 /**
@@ -119,14 +126,16 @@ var getVoisins = function(row, col) {
  * Calcul global du nombre de voisins.
  */
 var updateNbVoisins = function() {
-    var elems = laTable[0].getElementsByClassName('estvivante'),
+    var ts1 = performance.now(),
+        ts2 = null,
+        elems = laTable[0].getElementsByClassName('estvivante'),
         i = null,
         j = null,
         maCellule = null,
         maCelluleVoisine = null,
         tableGetVoisins = null;
     for (i = 0; i<elems.length; i++) {
-        maCellule = elems.item(i);
+        maCellule = elems[i];
         tableGetVoisins = getVoisins(parseInt(maCellule.dataset.row), parseInt(maCellule.dataset.col));
         for (j = 0; j < tableGetVoisins.length; j++) {
             maCelluleVoisine = tableGetVoisins[j][0];
@@ -135,6 +144,8 @@ var updateNbVoisins = function() {
             nbVoisins[parseInt(maCelluleVoisine.dataset.row)][parseInt(maCelluleVoisine.dataset.col)]++;
         }
     }
+    ts2 = performance.now();
+    console.log('updateNbVoisins: ' + (ts2 - ts1) + 'ms');
 };
 
 /**
@@ -143,7 +154,9 @@ var updateNbVoisins = function() {
  * @returns {array<jQuery>} Liste des cases vivantes à la prochaine itération
  */
  var getAliveCells = function() {
-    var i = null,
+    var ts1 = performance.now(),
+        ts2 = null,
+        i = null,
         j = null,
         tableCellulesAlive = [],
         ligneEncours = null,
@@ -154,7 +167,7 @@ var updateNbVoisins = function() {
         ligneEncours = vueTableau[i];
         for (j = 0; j < nbCol; j++) {
             celluleEnCours = ligneEncours[j];
-            estCelluleVivante = celluleEnCours.hasClass('estvivante');
+            estCelluleVivante = celluleEnCours[0].classList.contains('estvivante');
             lNbVoisins = nbVoisins[i][j];
             // Si la cellule n'est pas vivante, mais qu'elle à 3 voisins, c'est une naissance.
             // Si la cellule est vivante et qu'elle a deux ou trois voisins, elle reste en vie.
@@ -163,6 +176,8 @@ var updateNbVoisins = function() {
             }
         }
     }
+    ts2 = performance.now();
+    console.log('getAliveCells: ' + (ts2 - ts1) + 'ms');
     return tableCellulesAlive;
 };
 
@@ -172,17 +187,29 @@ var updateNbVoisins = function() {
  * @param {array<jQuery>} TableCellules Tableau contenant les cellules qui seront vivantes à la prochaine itération
  */
 var updateFront = function(TableCellules) {
+    var ts1 = performance.now(),
+        ts2 = null;
     // tout setup a blanc puis set les bonnes cellules a noir
-    laTable.find('td').removeClass('estvivante');
-    $.each(TableCellules, function() {
-        this.addClass('estvivante');
-    });
+    if (TableCellules.length == 0) {
+        document.getElementById('alerteDeFin').innerHTML = '<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
+        clearInterval(nIntervId);
+        nIntervId = null;
+    } else {
+        [].forEach.call(laTable[0].querySelectorAll('.estvivante'), function(el) {
+            el.classList.remove('estvivante');
+        });
+        [].forEach.call(TableCellules, function(el) {
+            el[0].classList.add('estvivante');
+        });
+    }
     // Plus aucune cellule de vivante. On arrête là...
     if (TableCellules.length == 0) {
         document.getElementById('alerteDeFin').innerHTML = '<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
         clearInterval(nIntervId);
         nIntervId = null;
     }
+    ts2 = performance.now();
+    console.log('updateFront: ' + (ts2 - ts1) + 'ms');
 }
 
 /**
@@ -221,7 +248,7 @@ $(function() {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
 
-    setTable();
+    initGame();
 
     $('#start').on('click', function() {
         if (!nIntervId) {
@@ -237,7 +264,7 @@ $(function() {
     $('#restart').on('click', function() {
         clearInterval(nIntervId);
         nIntervId = null;
-        setTable();
+        initGame();
     });
 
     $('#dataTable').on('click', 'td', function(e) {
