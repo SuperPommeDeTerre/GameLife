@@ -122,14 +122,17 @@ var updateNbVoisins = function() {
     var elems = laTable[0].getElementsByClassName('estvivante'),
         i = null,
         j = null,
-        maCellule = null;
+        maCellule = null,
+        maCelluleVoisine = null,
+        tableGetVoisins = null;
     for (i = 0; i<elems.length; i++) {
         maCellule = elems.item(i);
-        var tableGetVoisins = getVoisins(maCellule.dataset.row, maCellule.dataset.col);
+        tableGetVoisins = getVoisins(parseInt(maCellule.dataset.row), parseInt(maCellule.dataset.col));
         for (j = 0; j < tableGetVoisins.length; j++) {
+            maCelluleVoisine = tableGetVoisins[j][0];
             // Si la cellule adjacente n'est pas vivante, alors on incrémente son nombre de voisins.
             // Ce sera utilisé lors du calcul des naissances et.
-            nbVoisins[tableGetVoisins[j].data('row')][tableGetVoisins[j].data('col')]++;
+            nbVoisins[parseInt(maCelluleVoisine.dataset.row)][parseInt(maCelluleVoisine.dataset.col)]++;
         }
     }
 };
