@@ -62,7 +62,6 @@ var initGame = function() {
     }
     laTable.innerHTML= html;
     gameState.aliveCells = laTable.querySelectorAll('.estvivante');
-    var tmp = laTable.getElementsByClassName('estvivante');
     // Calcul des voisins à l'init
     listeToutesCellules = laTable.getElementsByTagName('td');
     [].forEach.call(listeToutesCellules, function(maCellule) {
@@ -126,10 +125,11 @@ var getVoisins = function(cellule) {
 var updateNbVoisins = function() {
     var ts1 = performance.now(),
         ts2 = null;
+    // Les cellules vivantes sont à ajouter comme voisins des autres cellules, pas les autres.
+    // Dans le pire des cas, on va boucler (nb cases noires * 8)
     [].forEach.call(gameState.aliveCells, function(maCellule) {
+        // On incrémente le nombre de voisins pour les cellules voisines de la cellule vivante (8 maximum)
         [].forEach.call(gameState.voisins[maCellule.parentElement.rowIndex][maCellule.cellIndex], function(maCelluleVoisine) {
-            // Si la cellule adjacente n'est pas vivante, alors on incrémente son nombre de voisins.
-            // Ce sera utilisé lors du calcul des naissances et du reste en vie.
             gameState.nbVoisins[maCelluleVoisine.parentElement.rowIndex][maCelluleVoisine.cellIndex]++;
         });
     });
