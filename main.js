@@ -219,6 +219,10 @@ var play = function() {
     console.log('play: ' + (ts2 - ts1) + 'ms');
 }
 
+/**
+ * Exécuté lors du chargement de la page.
+ * On effectue ici l'initialisation des gestionnaires d'évènements statiques et du DOM.
+ */
 document.addEventListener('DOMContentLoaded', function() {
     laTable = document.getElementById('dataTable').firstChild;
     generationContainer = document.getElementById('generation');
@@ -230,8 +234,6 @@ document.addEventListener('DOMContentLoaded', function() {
         btnStart = document.getElementById('start'),
         btnPause = document.getElementById('pause'),
         btnRestart = document.getElementById('restart');
-
-    initGame();
 
     btnStart.addEventListener('click', function() {
         if (!nIntervId) {
@@ -251,6 +253,8 @@ document.addEventListener('DOMContentLoaded', function() {
     btnRestart.addEventListener('click', function() {
         clearInterval(nIntervId);
         nIntervId = null;
+        btnStart.disabled = false;
+        btnPause.disabled = true;
         initGame();
     });
 
@@ -265,4 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    btnRestart.dispatchEvent(new Event('click'));
+
 }, false);
