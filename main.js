@@ -1,60 +1,37 @@
 /**
- * Nombre de lignes du tableau par défaut
- */
-var nbRow = 100;
-/**
- * Nombre de colonnes du tableau par défaut
- */
-var nbCol = 100;
-/**
- * Pointeur vers l'intervalle de temps défini (temps d'itération)
- */
-var nIntervId;
-/**
  * Vitesses d'exécution disponibles
  */
 var intervallesDisponibles = {
     'normal': 400,
     'rapide': 200,
     'tresrapide': 100
-}
-/**
- * Temps de l'intervalle de chaque génération
- */
-var nIntervalTime = intervallesDisponibles.normal;
-/**
- * Numéro de la génration en cours
- */
-var nbGeneration = 0;
+};
 /**
  * Variable de stockage de l'état du jeu
  */
 var gameState = {
     aliveCells: [],
-    nbVoisins: new Array(nbRow),
-    voisins: new Array(nbRow)
+    nbVoisins: [],
+    voisins: []
 };
 /**
  * Objet HTMLElement de l'élément DOM de la table
  */
 var laTable = null;
-/**
- * Objet HTMLElement de l'élément DOM du compteur de génération
- */
-var generationContainer = null;
 
 /**
  * Fonction d'initialisation de la table
+ * 
+ * @param {int} nbRow Nombre de lignes
+ * @param {int} nbCol Nombre de colonnes
  */
-var initGame = function() {
+var initGame = function(nbRow, nbCol) {
     var ts1 = performance.now(),
         ts2 = null,
         html = '',
         i = null,
         listeToutesCellules = null;
     laTable.innerHTML = '';
-    nbRow = parseInt(document.getElementById('nblignes').value, 10);
-    nbCol = parseInt(document.getElementById('nbcolonnes').value, 10);
     gameState.nbVoisins = new Array(nbRow);
     gameState.voisins = new Array(nbRow);
     for (i = 0; i < nbRow; i++) {
@@ -73,10 +50,9 @@ var initGame = function() {
     // Calcul des voisins à l'init
     listeToutesCellules = laTable.getElementsByTagName('td');
     [].forEach.call(listeToutesCellules, function(maCellule) {
-        gameState.voisins[maCellule.parentElement.rowIndex][maCellule.cellIndex] = getVoisins(maCellule);
+        gameState.voisins[maCellule.parentElement.rowIndex][maCellule.cellIndex] = getVoisins(maCellule, nbRow, nbCol);
     });
-    nbGeneration = 0;
-    generationContainer.value = nbGeneration;
+    document.getElementById('generation').value = 0;
     ts2 = performance.now();
     console.log('initGame : ' + (ts2 - ts1) + 'ms');
 }
@@ -85,9 +61,11 @@ var initGame = function() {
  * Récupère la liste des cellules voisines d'une case
  * 
  * @param {HTMLElement} cellule Cellule sont il faut récupérer les voisins
+ * @param {int} rowMax Nombre de lignes
+ * @param {int} colMax Nombre de colonnes
  * @returns {array<HTMLElement>} Liste des objets des cellules adjacentes
  */
-var getVoisins = function(cellule) {
+var getVoisins = function(cellule, rowMax, colMax) {
     // fonction pour obtenir les voisins de la cellule
     var valeurDeRetour = [],
         row = cellule.parentElement.rowIndex,
@@ -102,7 +80,7 @@ var getVoisins = function(cellule) {
             valeurDeRetour.push(laTable.rows[lignePrecedente].cells[colonnePrecedente]);
         }
         valeurDeRetour.push(laTable.rows[lignePrecedente].cells[col]);
-        if (colonneSuivante < nbCol) {
+        if (colonneSuivante < colMax) {
             valeurDeRetour.push(laTable.rows[lignePrecedente].cells[colonneSuivante]);
         }
     }
@@ -111,16 +89,16 @@ var getVoisins = function(cellule) {
         valeurDeRetour.push(laTable.rows[row].cells[colonnePrecedente]);
     }
     // On n'ajoute pas la cellule en cours...
-    if (colonneSuivante < nbCol) {
+    if (colonneSuivante < colMax) {
         valeurDeRetour.push(laTable.rows[row].cells[colonneSuivante]);
     }
     // Traitement de la ligne suivante
-    if (ligneSuivante < nbRow) {
+    if (ligneSuivante < rowMax) {
         if (colonnePrecedente >= 0) {
             valeurDeRetour.push(laTable.rows[ligneSuivante].cells[colonnePrecedente]);
         }
         valeurDeRetour.push(laTable.rows[ligneSuivante].cells[col]);
-        if (colonneSuivante < nbCol) {
+        if (colonneSuivante < colMax) {
             valeurDeRetour.push(laTable.rows[ligneSuivante].cells[colonneSuivante]);
         }
     }
@@ -190,9 +168,12 @@ var initNextIteration = function(cellulesVivantesIterationSuivantes) {
         var alertContainer = document.getElementById('alerteDeFin');
         alertContainer.innerHTML = '<div class="alert alert-warning alert-dismissible fade show" data-bs-dismiss="alert" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
         new bootstrap.Alert(alertContainer.querySelector('.alert'));
-        clearInterval(nIntervId);
-        nIntervId = null;
+        GameOfLife.end();
         document.getElementById('pause').disabled = true;
+        document.getElementById('start').disabled = true;
+        document.getElementById('rapide').disabled = true;
+        document.getElementById('plusrapide').disabled = true;
+        document.getElementById('restart').disabled = false;
     } else {
         [].forEach.call(cellulesVivantesIterationSuivantes, function(el) {
             el.classList.add('estvivante');
@@ -208,12 +189,43 @@ var initNextIteration = function(cellulesVivantesIterationSuivantes) {
 }
 
 /**
+ * Classe permettant de gérer le jeu
+ */
+var GameOfLife = function() {};
+
+/**
+ * Pointeur vers l'intervalle de temps défini (temps d'itération)
+ */
+GameOfLife.IntervalId = null;
+
+/**
+ * Démarrage dui jeu.
+ * 
+ * @param {*} vitesse Intervalle de temps de chaque tour de jeu.
+ */
+GameOfLife.start = function(vitesse) {
+    if (GameOfLife.IntervalId) {
+        clearInterval(GameOfLife.IntervalId);
+    }
+    GameOfLife.IntervalId = setInterval(play, vitesse);
+};
+
+/**
+ * Fin du jeu
+ */
+GameOfLife.end = function() {
+    if (GameOfLife.IntervalId) {
+        clearInterval(GameOfLife.IntervalId);
+    }
+    clearInterval(GameOfLife.IntervalId);
+};
+
+/**
  * Boucle principale
  */
 var play = function() {
     var ts1 = performance.now(),
-        ts2 = null,
-        i = null;
+        ts2 = null;
     // Mise à jour du nombre des voisins
     updateNbVoisins();
 
@@ -221,11 +233,10 @@ var play = function() {
     initNextIteration(getAliveCellsNextIteration());
 
     // Reset du nombre des voisins
-    for (i = 0; i < nbRow; i++) {
-        gameState.nbVoisins[i].fill(0);
-    }
-    nbGeneration++;
-    generationContainer.value = nbGeneration;
+    [].forEach.call(gameState.nbVoisins, function(nbVoisinsLigne) {
+        nbVoisinsLigne.fill(0);
+    });
+    document.getElementById('generation').value++;
     ts2 = performance.now();
     console.log('play: ' + (ts2 - ts1) + 'ms');
 }
@@ -235,25 +246,25 @@ var play = function() {
  * On effectue ici l'initialisation des gestionnaires d'évènements statiques et du DOM.
  */
 document.addEventListener('DOMContentLoaded', function() {
-    laTable = document.getElementById('dataTable').firstChild;
-    generationContainer = document.getElementById('generation');
+    /**
+     * Nombre de lignes du tableau par défaut
+     */
+    var nbRow = 100;
+    /**
+     * Nombre de colonnes du tableau par défaut
+     */
+    var nbCol = 100;
 
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')),
-        tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        }),
-        btnStart = document.getElementById('start'),
+    laTable = document.getElementById('dataTable').firstChild;
+
+    var btnStart = document.getElementById('start'),
         btnVitesseRapide = document.getElementById('rapide'),
         btnVitesseTresRapide = document.getElementById('plusrapide'),
         btnPause = document.getElementById('pause'),
         btnRestart = document.getElementById('restart');
 
     btnStart.addEventListener('click', function() {
-        nIntervalTime = intervallesDisponibles.normal;
-        if (nIntervId) {
-            clearInterval(nIntervId);
-        }
-        nIntervId = setInterval(play, nIntervalTime);
+        GameOfLife.start(intervallesDisponibles.normal);
         btnPause.disabled = false;
         btnStart.disabled = true;
         btnVitesseRapide.disabled = false;
@@ -261,11 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     btnVitesseRapide.addEventListener('click', function() {
-        nIntervalTime = intervallesDisponibles.rapide;
-        if (nIntervId) {
-            clearInterval(nIntervId);
-        }
-        nIntervId = setInterval(play, nIntervalTime);
+        GameOfLife.start(intervallesDisponibles.rapide);
         btnPause.disabled = false;
         btnStart.disabled = false;
         btnVitesseRapide.disabled = true;
@@ -273,11 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     btnVitesseTresRapide.addEventListener('click', function() {
-        nIntervalTime = intervallesDisponibles.tresrapide;
-        if (nIntervId) {
-            clearInterval(nIntervId);
-        }
-        nIntervId = setInterval(play, nIntervalTime);
+        GameOfLife.start(intervallesDisponibles.tresrapide);
         btnPause.disabled = false;
         btnStart.disabled = false;
         btnVitesseRapide.disabled = false;
@@ -285,8 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     btnPause.addEventListener('click', function() {
-        clearInterval(nIntervId);
-        nIntervId = null;
+        GameOfLife.end();
         btnStart.disabled = false;
         btnPause.disabled = true;
         btnVitesseRapide.disabled = false;
@@ -294,18 +296,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     btnRestart.addEventListener('click', function() {
+        // Sur clic sur le bouton "Redémarrer", on supprime l'alerte éventuelle de fin de jeu.
         var alertNode = document.querySelector('#alerteDeFin .alert'),
             alertInstance = bootstrap.Alert.getInstance(alertNode);
         if (alertInstance != null) {
             alertInstance.close();
         }
-        clearInterval(nIntervId);
-        nIntervId = null;
+        GameOfLife.end();
         btnStart.disabled = false;
         btnPause.disabled = true;
         btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = false;
-        initGame();
+        // On récupère le paramétrage de nombre de lignes et de colonnes
+        nbRow = parseInt(document.getElementById('nblignes').value, 10);
+        nbCol = parseInt(document.getElementById('nbcolonnes').value, 10);
+        initGame(nbRow, nbCol);
     });
 
     document.getElementById('dataTable').addEventListener('click', function(e) {
