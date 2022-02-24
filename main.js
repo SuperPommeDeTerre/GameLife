@@ -174,15 +174,18 @@ var initNextIteration = function(cellulesVivantesIterationSuivantes) {
     var ts1 = performance.now(),
         ts2 = null;
     // tout setup a blanc puis set les bonnes cellules a noir
+    [].forEach.call(laTable.querySelectorAll('.estvivante'), function(el) {
+        el.classList.remove('estvivante');
+    });
     if (cellulesVivantesIterationSuivantes.length == 0) {
         // Plus aucune cellule de vivante. On arrête là...
-        document.getElementById('alerteDeFin').innerHTML = '<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
+        var alertContainer = document.getElementById('alerteDeFin');
+        alertContainer.innerHTML = '<div class="alert alert-warning alert-dismissible fade show" data-bs-dismiss="alert" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
+        new bootstrap.Alert(alertContainer.querySelector('.alert'));
         clearInterval(nIntervId);
         nIntervId = null;
+        document.getElementById('pause').disabled = true;
     } else {
-        [].forEach.call(laTable.querySelectorAll('.estvivante'), function(el) {
-            el.classList.remove('estvivante');
-        });
         [].forEach.call(cellulesVivantesIterationSuivantes, function(el) {
             el.classList.add('estvivante');
         });
@@ -251,6 +254,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     btnRestart.addEventListener('click', function() {
+        var alertNode = document.querySelector('#alerteDeFin .alert'),
+            alertInstance = bootstrap.Alert.getInstance(alertNode);
+        if (alertInstance != null) {
+            alertInstance.close();
+        }
         clearInterval(nIntervId);
         nIntervId = null;
         btnStart.disabled = false;
