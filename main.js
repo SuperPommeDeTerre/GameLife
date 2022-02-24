@@ -11,9 +11,17 @@ var nbCol = 100;
  */
 var nIntervId;
 /**
+ * Vitesses d'exécution disponibles
+ */
+var intervallesDisponibles = {
+    'normal': 400,
+    'rapide': 200,
+    'tresrapide': 100
+}
+/**
  * Temps de l'intervalle de chaque génération
  */
-var nIntervalTime = 200;
+var nIntervalTime = intervallesDisponibles.normal;
 /**
  * Numéro de la génration en cours
  */
@@ -235,15 +243,45 @@ document.addEventListener('DOMContentLoaded', function() {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         }),
         btnStart = document.getElementById('start'),
+        btnVitesseRapide = document.getElementById('rapide'),
+        btnVitesseTresRapide = document.getElementById('plusrapide'),
         btnPause = document.getElementById('pause'),
         btnRestart = document.getElementById('restart');
 
     btnStart.addEventListener('click', function() {
-        if (!nIntervId) {
-            nIntervId = setInterval(play, nIntervalTime);
+        nIntervalTime = intervallesDisponibles.normal;
+        if (nIntervId) {
+            clearInterval(nIntervId);
         }
+        nIntervId = setInterval(play, nIntervalTime);
         btnPause.disabled = false;
         btnStart.disabled = true;
+        btnVitesseRapide.disabled = false;
+        btnVitesseTresRapide.disabled = false;
+    });
+
+    btnVitesseRapide.addEventListener('click', function() {
+        nIntervalTime = intervallesDisponibles.rapide;
+        if (nIntervId) {
+            clearInterval(nIntervId);
+        }
+        nIntervId = setInterval(play, nIntervalTime);
+        btnPause.disabled = false;
+        btnStart.disabled = false;
+        btnVitesseRapide.disabled = true;
+        btnVitesseTresRapide.disabled = false;
+    });
+
+    btnVitesseTresRapide.addEventListener('click', function() {
+        nIntervalTime = intervallesDisponibles.tresrapide;
+        if (nIntervId) {
+            clearInterval(nIntervId);
+        }
+        nIntervId = setInterval(play, nIntervalTime);
+        btnPause.disabled = false;
+        btnStart.disabled = false;
+        btnVitesseRapide.disabled = false;
+        btnVitesseTresRapide.disabled = true;
     });
 
     btnPause.addEventListener('click', function() {
@@ -251,6 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
         nIntervId = null;
         btnStart.disabled = false;
         btnPause.disabled = true;
+        btnVitesseRapide.disabled = false;
+        btnVitesseTresRapide.disabled = false;
     });
 
     btnRestart.addEventListener('click', function() {
@@ -263,6 +303,8 @@ document.addEventListener('DOMContentLoaded', function() {
         nIntervId = null;
         btnStart.disabled = false;
         btnPause.disabled = true;
+        btnVitesseRapide.disabled = false;
+        btnVitesseTresRapide.disabled = false;
         initGame();
     });
 
