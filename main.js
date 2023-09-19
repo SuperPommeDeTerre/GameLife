@@ -1,7 +1,7 @@
 /**
  * Vitesses d'exécution disponibles
  */
-var intervallesDisponibles = {
+let intervallesDisponibles = {
     'normal': 400,
     'rapide': 200,
     'tresrapide': 100
@@ -9,7 +9,7 @@ var intervallesDisponibles = {
 /**
  * Variable de stockage de l'état du jeu
  */
-var gameState = {
+let gameState = {
     aliveCells: [],
     nbVoisins: [],
     voisins: []
@@ -17,7 +17,7 @@ var gameState = {
 /**
  * Objet HTMLElement de l'élément DOM de la table
  */
-var laTable = null;
+let laTable = null;
 
 /**
  * Fonction d'initialisation de la table
@@ -25,34 +25,35 @@ var laTable = null;
  * @param {int} nbRow Nombre de lignes
  * @param {int} nbCol Nombre de colonnes
  */
-var initGame = function(nbRow, nbCol) {
-    var ts1 = performance.now(),
+let initGame = (nbRow, nbCol) => {
+    let ts1 = performance.now(),
         ts2 = null,
-        html = '',
-        i = null,
-        listeToutesCellules = null;
+        html = '';
     laTable.innerHTML = '';
     gameState.nbVoisins = new Array(nbRow);
     gameState.voisins = new Array(nbRow);
-    for (i = 0; i < nbRow; i++) {
+    for (let i = 0; i < nbRow; i++) {
         html += '<tr>';
         gameState.nbVoisins[i] = new Array(nbCol);
         gameState.voisins[i] = new Array(nbCol);
         gameState.nbVoisins[i].fill(0);
-        for (var j = 0; j < nbCol; j++) {
-            var color = Math.floor(Math.random() * 2);
-            html += '<td class="' + (color != 0 ? 'estvivante':'') + '" id="cell' + i + '_' + j + '"></td>';
+        for (let j = 0; j < nbCol; j++) {
+            let estCelluleVivante = Math.floor(Math.random() * 2);
+            html += '<td class="' + (estCelluleVivante != 0 ? 'estvivante':'') + '" data-row="' + i + '" data-col="' + j + '"></td>';
         }
         html += '</tr>';
     }
     laTable.innerHTML= html;
-    gameState.aliveCells = laTable.querySelectorAll('.estvivante');
+    gameState.aliveCells = Array.from(laTable.getElementsByClassName("estvivante"));
     // Calcul des voisins à l'init
-    listeToutesCellules = laTable.getElementsByTagName('td');
-    [].forEach.call(listeToutesCellules, function(maCellule) {
-        gameState.voisins[maCellule.parentElement.rowIndex][maCellule.cellIndex] = getVoisins(maCellule, nbRow, nbCol);
-    });
-    document.getElementById('generation').value = 0;
+    for (let i = 0, row; row = laTable.parentElement.rows[i]; i++) {
+        //iterate through rows
+        //rows would be accessed using the "row" variable assigned in the for loop
+        for (let j = 0, maCellule; maCellule = row.cells[j]; j++) {
+            gameState.voisins[i][j] = getVoisins(maCellule, nbRow, nbCol);
+        }
+    };
+    document.getElementById("generation").value = 0;
     ts2 = performance.now();
     console.log('initGame : ' + (ts2 - ts1) + 'ms');
 }
@@ -65,11 +66,11 @@ var initGame = function(nbRow, nbCol) {
  * @param {int} colMax Nombre de colonnes
  * @returns {array<HTMLElement>} Liste des objets des cellules adjacentes
  */
-var getVoisins = function(cellule, rowMax, colMax) {
+let getVoisins = (cellule, rowMax, colMax) => {
     // fonction pour obtenir les voisins de la cellule
-    var valeurDeRetour = [],
-        row = cellule.parentElement.rowIndex,
-        col = cellule.cellIndex,
+    let valeurDeRetour = [],
+        row = cellule.dataset.row * 1,
+        col = cellule.dataset.col * 1,
         lignePrecedente = row - 1,
         ligneSuivante = row + 1,
         colonnePrecedente = col - 1,
@@ -108,15 +109,15 @@ var getVoisins = function(cellule, rowMax, colMax) {
 /**
  * Calcul global du nombre de voisins.
  */
-var updateNbVoisins = function() {
-    var ts1 = performance.now(),
+let updateNbVoisins = () => {
+    let ts1 = performance.now(),
         ts2 = null;
     // Les cellules vivantes sont à ajouter comme voisins des autres cellules, pas les autres.
     // Dans le pire des cas, on va boucler (nb cases noires * 8)
-    [].forEach.call(gameState.aliveCells, function(maCellule) {
+    gameState.aliveCells.forEach((maCellule) => {
         // On incrémente le nombre de voisins pour les cellules voisines de la cellule vivante (8 maximum)
-        [].forEach.call(gameState.voisins[maCellule.parentElement.rowIndex][maCellule.cellIndex], function(maCelluleVoisine) {
-            gameState.nbVoisins[maCelluleVoisine.parentElement.rowIndex][maCelluleVoisine.cellIndex]++;
+        gameState.voisins[maCellule.dataset.row * 1][maCellule.dataset.col * 1].forEach((maCelluleVoisine) => {
+            gameState.nbVoisins[maCelluleVoisine.dataset.row * 1][maCelluleVoisine.dataset.col * 1]++;
         });
     });
     ts2 = performance.now();
@@ -128,14 +129,14 @@ var updateNbVoisins = function() {
  * 
  * @returns {array<HTMLElement>} Liste des cases vivantes à la prochaine itération
  */
- var getAliveCellsNextIteration = function() {
-    var ts1 = performance.now(),
+let getAliveCellsNextIteration = () => {
+    let ts1 = performance.now(),
         ts2 = null,
         tableCellulesAlive = [],
         maCellule = null;
-    [].forEach.call(gameState.nbVoisins, function(maLigneVoisins, indexLigne) {
+    gameState.nbVoisins.forEach((maLigneVoisins, indexLigne) => {
         // On filtre les éléments pour ne garder que les voisins 2 et 3
-        [].forEach.call(maLigneVoisins, function(nbVoisinsCellule, indexColonne) {
+        maLigneVoisins.forEach((nbVoisinsCellule, indexColonne) => {
             if (nbVoisinsCellule == 2 || nbVoisinsCellule == 3) {
                 maCellule = laTable.rows[indexLigne].cells[indexColonne];
                 // Si la cellule n'est pas vivante, mais qu'elle à 3 voisins, c'est une naissance.
@@ -156,16 +157,17 @@ var updateNbVoisins = function() {
  * 
  * @param {array<HTMLElement>} cellulesVivantesIterationSuivantes Tableau contenant les cellules qui seront vivantes à la prochaine itération
  */
-var initNextIteration = function(cellulesVivantesIterationSuivantes) {
-    var ts1 = performance.now(),
-        ts2 = null;
+let initNextIteration = (cellulesVivantesIterationSuivantes) => {
+    let ts1 = performance.now(),
+        ts2 = null,
+        cellulesVivantesActuelles = laTable.getElementsByClassName("estvivante");
     // tout setup a blanc puis set les bonnes cellules a noir
-    [].forEach.call(laTable.querySelectorAll('.estvivante'), function(el) {
-        el.classList.remove('estvivante');
-    });
+    for (let cellule of cellulesVivantesActuelles) {
+        cellule.className = "";
+    }
     if (cellulesVivantesIterationSuivantes.length == 0) {
         // Plus aucune cellule de vivante. On arrête là...
-        var alertContainer = document.getElementById('alerteDeFin');
+        let alertContainer = document.getElementById('alerteDeFin');
         alertContainer.innerHTML = '<div class="alert alert-warning alert-dismissible fade show" data-bs-dismiss="alert" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
         new bootstrap.Alert(alertContainer.querySelector('.alert'));
         GameOfLife.end();
@@ -175,12 +177,12 @@ var initNextIteration = function(cellulesVivantesIterationSuivantes) {
         document.getElementById('plusrapide').disabled = true;
         document.getElementById('restart').disabled = false;
     } else {
-        [].forEach.call(cellulesVivantesIterationSuivantes, function(el) {
-            el.classList.add('estvivante');
+        cellulesVivantesIterationSuivantes.forEach((el) => {
+            el.className = "estvivante";
         });
         gameState.aliveCells = [...cellulesVivantesIterationSuivantes];
         // On remet à zéro le nombre de voisins
-        [].forEach.call(gameState.nbVoisins, function(el) {
+        gameState.nbVoisins.forEach((el) => {
             el.fill(0);
         });
     }
@@ -191,7 +193,7 @@ var initNextIteration = function(cellulesVivantesIterationSuivantes) {
 /**
  * Classe permettant de gérer le jeu
  */
-var GameOfLife = function() {};
+let GameOfLife = () => {};
 
 /**
  * Pointeur vers l'intervalle de temps défini (temps d'itération)
@@ -203,7 +205,7 @@ GameOfLife.IntervalId = null;
  * 
  * @param {*} vitesse Intervalle de temps de chaque tour de jeu.
  */
-GameOfLife.start = function(vitesse) {
+GameOfLife.start = (vitesse) => {
     if (GameOfLife.IntervalId) {
         clearInterval(GameOfLife.IntervalId);
     }
@@ -213,7 +215,7 @@ GameOfLife.start = function(vitesse) {
 /**
  * Fin du jeu
  */
-GameOfLife.end = function() {
+GameOfLife.end = () => {
     if (GameOfLife.IntervalId) {
         clearInterval(GameOfLife.IntervalId);
     }
@@ -223,8 +225,8 @@ GameOfLife.end = function() {
 /**
  * Boucle principale
  */
-var play = function() {
-    var ts1 = performance.now(),
+let play = () => {
+    let ts1 = performance.now(),
         ts2 = null;
     // Mise à jour du nombre des voisins
     updateNbVoisins();
@@ -233,7 +235,7 @@ var play = function() {
     initNextIteration(getAliveCellsNextIteration());
 
     // Reset du nombre des voisins
-    [].forEach.call(gameState.nbVoisins, function(nbVoisinsLigne) {
+    gameState.nbVoisins.forEach((nbVoisinsLigne) => {
         nbVoisinsLigne.fill(0);
     });
     document.getElementById('generation').value++;
@@ -315,12 +317,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('dataTable').addEventListener('click', function(e) {
         // On ne prend que les click sur les cellules
-        var noeudClique = e.path[0];
+        var noeudClique = e.target;
         if (noeudClique.nodeName == 'TD') {
-            if (noeudClique.classList.contains('estvivante')) {
-                noeudClique.classList.remove('estvivante');
+            if (noeudClique.className == "estvivante") {
+                noeudClique.className = "";
             } else {
-                noeudClique.classList.add('estvivante');
+                noeudClique.className = "estvivante";
             }
         }
     });
