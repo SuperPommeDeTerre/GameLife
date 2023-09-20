@@ -141,7 +141,7 @@ let getAliveCellsNextIteration = () => {
                 maCellule = laTable.rows[indexLigne].cells[indexColonne];
                 // Si la cellule n'est pas vivante, mais qu'elle à 3 voisins, c'est une naissance.
                 // Si la cellule est vivante et qu'elle a deux ou trois voisins, elle reste en vie.
-                if (maCellule.classList.contains('estvivante') || nbVoisinsCellule == 3) {
+                if (maCellule.className == "estvivante" || nbVoisinsCellule == 3) {
                     tableCellulesAlive.push(maCellule);
                 }
             }
@@ -160,11 +160,29 @@ let getAliveCellsNextIteration = () => {
 let initNextIteration = (cellulesVivantesIterationSuivantes) => {
     let ts1 = performance.now(),
         ts2 = null,
-        cellulesVivantesActuelles = Array.from(laTable.getElementsByClassName("estvivante"));
-    // tout setup a blanc puis set les bonnes cellules a noir
+        cellulesVivantesActuelles = Array.from(laTable.getElementsByClassName("estvivante")),
+        cellulesMourantes = [],
+        cellulesNaissantes = [];
+    // Calcul des cellules mourantes
     for (let cellule of cellulesVivantesActuelles.values()) {
-        cellule.className = "";
+        if (!(cellule in cellulesVivantesIterationSuivantes)) {
+            cellulesMourantes.push(cellule);
+        }
     }
+    // Calcul des cellules naissantes
+    for (let cellule of cellulesVivantesIterationSuivantes.values()) {
+        if (!(cellule in cellulesVivantesActuelles)) {
+            cellulesNaissantes.push(cellule);
+        }
+    }
+    // On ne change l'état que des cellules naissantes ou mourantes.
+    cellulesMourantes.forEach((el) => {
+        el.className = "";
+    });
+    cellulesNaissantes.forEach((el) => {
+        el.className = "estvivante";
+    });
+
     if (cellulesVivantesIterationSuivantes.length == 0) {
         // Plus aucune cellule de vivante. On arrête là...
         let alertContainer = document.getElementById('alerteDeFin');
@@ -177,9 +195,6 @@ let initNextIteration = (cellulesVivantesIterationSuivantes) => {
         document.getElementById('plusrapide').disabled = true;
         document.getElementById('restart').disabled = false;
     } else {
-        cellulesVivantesIterationSuivantes.forEach((el) => {
-            el.className = "estvivante";
-        });
         gameState.aliveCells = cellulesVivantesIterationSuivantes.slice();
         // On remet à zéro le nombre de voisins
         gameState.nbVoisins.forEach((el) => {
