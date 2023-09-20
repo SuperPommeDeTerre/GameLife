@@ -160,9 +160,9 @@ let getAliveCellsNextIteration = () => {
 let initNextIteration = (cellulesVivantesIterationSuivantes) => {
     let ts1 = performance.now(),
         ts2 = null,
-        cellulesVivantesActuelles = laTable.getElementsByClassName("estvivante");
+        cellulesVivantesActuelles = Array.from(laTable.getElementsByClassName("estvivante"));
     // tout setup a blanc puis set les bonnes cellules a noir
-    for (let cellule of cellulesVivantesActuelles) {
+    for (let cellule of cellulesVivantesActuelles.values()) {
         cellule.className = "";
     }
     if (cellulesVivantesIterationSuivantes.length == 0) {
@@ -180,7 +180,7 @@ let initNextIteration = (cellulesVivantesIterationSuivantes) => {
         cellulesVivantesIterationSuivantes.forEach((el) => {
             el.className = "estvivante";
         });
-        gameState.aliveCells = [...cellulesVivantesIterationSuivantes];
+        gameState.aliveCells = cellulesVivantesIterationSuivantes.slice();
         // On remet à zéro le nombre de voisins
         gameState.nbVoisins.forEach((el) => {
             el.fill(0);
@@ -188,6 +188,28 @@ let initNextIteration = (cellulesVivantesIterationSuivantes) => {
     }
     ts2 = performance.now();
     console.log('initNextIteration: ' + (ts2 - ts1) + 'ms');
+}
+
+/**
+ * Boucle principale
+ */
+let play = () => {
+    let ts1 = performance.now(),
+        ts2 = null;
+    if (GameOfLife.needAliveCellsComputeNeeded) {
+        gameState.aliveCells = Array.from(laTable.getElementsByClassName("estvivante"));
+        GameOfLife.needAliveCellsComputeNeeded = false;
+    }
+
+    // Mise à jour du nombre des voisins
+    updateNbVoisins();
+
+    // Mise à jour de l'IHM
+    initNextIteration(getAliveCellsNextIteration());
+
+    document.getElementById('generation').value++;
+    ts2 = performance.now();
+    console.log('play: ' + (ts2 - ts1) + 'ms');
 }
 
 /**
@@ -201,7 +223,12 @@ let GameOfLife = () => {};
 GameOfLife.IntervalId = null;
 
 /**
- * Démarrage dui jeu.
+ * Booléen indiquant si un recalcul des cases vivantes est nécessaire (dans le cas d'un changement d'état manuel du tableau de jeu)
+ */
+GameOfLife.needAliveCellsComputeNeeded = true;
+
+/**
+ * Démarrage du jeu.
  * 
  * @param {*} vitesse Intervalle de temps de chaque tour de jeu.
  */
@@ -223,27 +250,6 @@ GameOfLife.end = () => {
 };
 
 /**
- * Boucle principale
- */
-let play = () => {
-    let ts1 = performance.now(),
-        ts2 = null;
-    // Mise à jour du nombre des voisins
-    updateNbVoisins();
-
-    // Mise à jour de l'IHM
-    initNextIteration(getAliveCellsNextIteration());
-
-    // Reset du nombre des voisins
-    gameState.nbVoisins.forEach((nbVoisinsLigne) => {
-        nbVoisinsLigne.fill(0);
-    });
-    document.getElementById('generation').value++;
-    ts2 = performance.now();
-    console.log('play: ' + (ts2 - ts1) + 'ms');
-}
-
-/**
  * Exécuté lors du chargement de la page.
  * On effectue ici l'initialisation des gestionnaires d'évènements statiques et du DOM.
  */
@@ -262,8 +268,14 @@ document.addEventListener('DOMContentLoaded', function() {
     var btnStart = document.getElementById('start'),
         btnVitesseRapide = document.getElementById('rapide'),
         btnVitesseTresRapide = document.getElementById('plusrapide'),
+        btnStepByStep = document.getElementById('stepbystep'),
         btnPause = document.getElementById('pause'),
         btnRestart = document.getElementById('restart');
+
+    btnStepByStep.addEventListener('click', () => {
+        btnPause.dispatchEvent(new Event('click'));
+        play();
+    });
 
     btnStart.addEventListener('click', function() {
         GameOfLife.start(intervallesDisponibles.normal);
@@ -319,12 +331,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // On ne prend que les click sur les cellules
         var noeudClique = e.target;
         if (noeudClique.nodeName == 'TD') {
-            if (noeudClique.className == "estvivante") {
-                noeudClique.className = "";
-            } else {
-                noeudClique.className = "estvivante";
-            }
+            noeudClique.classList.toggle("estvivante");
         }
+        // Les cellules vivantes ont changées. Il faut effectuer un recalcul à la prochaine itération...
+        GameOfLife.needAliveCellsComputeNeeded = true;
     });
 
     btnRestart.dispatchEvent(new Event('click'));
