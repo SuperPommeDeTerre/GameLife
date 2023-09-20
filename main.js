@@ -165,13 +165,13 @@ let initNextIteration = (cellulesVivantesIterationSuivantes) => {
         cellulesNaissantes = [];
     // Calcul des cellules mourantes
     for (let cellule of cellulesVivantesActuelles.values()) {
-        if (!(cellule in cellulesVivantesIterationSuivantes)) {
+        if (cellulesVivantesIterationSuivantes.indexOf(cellule) == -1) {
             cellulesMourantes.push(cellule);
         }
     }
     // Calcul des cellules naissantes
     for (let cellule of cellulesVivantesIterationSuivantes.values()) {
-        if (!(cellule in cellulesVivantesActuelles)) {
+        if (cellulesVivantesActuelles.indexOf(cellule) == -1) {
             cellulesNaissantes.push(cellule);
         }
     }
@@ -183,10 +183,10 @@ let initNextIteration = (cellulesVivantesIterationSuivantes) => {
         el.className = "estvivante";
     });
 
-    if (cellulesVivantesIterationSuivantes.length == 0) {
-        // Plus aucune cellule de vivante. On arrête là...
+    if (cellulesVivantesIterationSuivantes.length == 0 || (cellulesMourantes.length == 0 && cellulesNaissantes.length == 0)) {
+        // Plus aucune cellule de vivante ou aucun changement par rapport à l'étape précédente. On arrête là...
         let alertContainer = document.getElementById('alerteDeFin');
-        alertContainer.innerHTML = '<div class="alert alert-warning alert-dismissible fade show" data-bs-dismiss="alert" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
+        alertContainer.innerHTML = '<div class="alert alert-warning alert-dismissible fade show" data-bs-dismiss="alert" role="alert"><strong>Fin du jeu&nbsp;!</strong> Plus aucune cellule n\'est vivante ou aucun changement. Le jeu ne peut plus continuer...<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>';
         new bootstrap.Alert(alertContainer.querySelector('.alert'));
         GameOfLife.end();
         document.getElementById('pause').disabled = true;
