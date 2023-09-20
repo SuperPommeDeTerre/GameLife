@@ -190,6 +190,7 @@ let initNextIteration = (cellulesVivantesIterationSuivantes) => {
         new bootstrap.Alert(alertContainer.querySelector('.alert'));
         GameOfLife.end();
         document.getElementById('pause').disabled = true;
+        document.getElementById('stepbystep').disabled = true;
         document.getElementById('start').disabled = true;
         document.getElementById('rapide').disabled = true;
         document.getElementById('plusrapide').disabled = true;
@@ -295,6 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnStart.addEventListener('click', function() {
         GameOfLife.start(intervallesDisponibles.normal);
         btnPause.disabled = false;
+        btnStepByStep.disabled = false;
         btnStart.disabled = true;
         btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = false;
@@ -303,6 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnVitesseRapide.addEventListener('click', function() {
         GameOfLife.start(intervallesDisponibles.rapide);
         btnPause.disabled = false;
+        btnStepByStep.disabled = false;
         btnStart.disabled = false;
         btnVitesseRapide.disabled = true;
         btnVitesseTresRapide.disabled = false;
@@ -311,6 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnVitesseTresRapide.addEventListener('click', function() {
         GameOfLife.start(intervallesDisponibles.tresrapide);
         btnPause.disabled = false;
+        btnStepByStep.disabled = false;
         btnStart.disabled = false;
         btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = true;
@@ -319,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnPause.addEventListener('click', function() {
         GameOfLife.end();
         btnStart.disabled = false;
+        btnStepByStep.disabled = false;
         btnPause.disabled = true;
         btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = false;
@@ -333,6 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         GameOfLife.end();
         btnStart.disabled = false;
+        btnStepByStep.disabled = false;
         btnPause.disabled = true;
         btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = false;
