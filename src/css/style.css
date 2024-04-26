@@ -1,9 +1,9 @@
 @import url("all.min.css");
-#dataTable td {
+#gameContainer td {
     background-color: white;
     width: 5px;
     height: 5px;
 }
-#dataTable td.estvivante {
+#gameContainer td.estvivante {
     background-color: black;
 }
