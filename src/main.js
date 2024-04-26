@@ -84,8 +84,6 @@ class GameOfLifeGrid {
         this.#init(intialState);
     }
 
-    get grid() { return this.#grid; }
-
     get nbRows() { return this.#nbRows; }
 
     get nbCols() { return this.#nbCols; }
@@ -242,6 +240,21 @@ class GameOfLifeGrid {
         this.#lisOfDeadNeighbours = this.#lisOfDeadNeighbours.filter((deadCell) => !deadCell.isAlive);
         return generationChanges;
     }
+
+    toggleCellStatus(row, col, isAlive) {
+        let myCell = this.#grid[row][col];
+        if (myCell.isAlive != isAlive) {
+            if (myCell.isAlive) {
+                myCell.die();
+            } else {
+                myCell.born();
+            }
+        }
+    }
+    
+    getCellFromCoords(row, col) {
+        return this.#grid[row][col];
+    }
 }
 
 /**
@@ -263,12 +276,6 @@ class GameOfLifeRenderer {
         this.#initialRender(this.#containerID);
     }
 
-    get grid() { return this.#grid; }
-    set grid(value) {
-        this.#grid = value;
-        this.#initialRender(this.#containerID);
-    }
-
     /**
      * Initialisation de l'affichage (création du tableau)
      * 
@@ -281,11 +288,12 @@ class GameOfLifeRenderer {
         for (let rowNumber = 0; rowNumber < this.#grid.nbRows; rowNumber++) {
             let tableRow = gridTable.insertRow();
             for (let colNumber = 0; colNumber < this.#grid.nbCols; colNumber++) {
-                let tableCell = tableRow.insertCell();
-                tableCell.className = this.#grid.grid[rowNumber][colNumber].isAlive?"estvivante":"";
+                let tableCell = tableRow.insertCell(),
+                    gridCell = this.#grid.getCellFromCoords(rowNumber, colNumber);
+                tableCell.className = gridCell.isAlive?"estvivante":"";
                 tableCell.dataset.row = rowNumber;
                 tableCell.dataset.col = colNumber;
-                this.#grid.grid[rowNumber][colNumber].underlyingCell = tableCell;
+                gridCell.underlyingCell = tableCell;
             }
         }
         // On vide le conteneur avant de le remplir
@@ -317,6 +325,16 @@ class GameOfLifeRenderer {
         console.log("MAJ DOM : " + (ts2 - ts1) + "ms");
         return borningCells.length + dyingCells.length;
     }
+
+    toggleCellStatus(row, col, isAlive) {
+        this.#grid.toggleCellStatus(row, col, isAlive);
+    }
+
+    initNewGrid(initialState = null, nbRows = null, nbCols = null) {
+        let nbColsToSet = nbCols == null?this.#grid.nbCols:nbCols,
+            nbRowsToSet = nbRows == null?this.#grid.nbRows:nbRows;
+        this.#grid = new GameOfLifeGrid(nbRowsToSet, nbColsToSet, initialState);
+    }
 }
 
 /**
@@ -328,6 +346,7 @@ class GameOfLifeRunner {
     #speed;
     #generation;
     #timerId;
+    #eventListener;
 
     /**
      * 
@@ -338,11 +357,12 @@ class GameOfLifeRunner {
      * @param {int} speed 
      * @param {GameOfLifeRenderer} renderer 
      */
-    constructor(nbRows, nbCols, containerId, initialState = null, speed = 200, renderer = null) {
+    constructor(nbRows, nbCols, containerId, eventListener = null, initialState = null, speed = 200, renderer = null) {
         this.#renderer = renderer==null?new GameOfLifeRenderer(containerId, nbRows, nbCols):renderer;
         this.#initialState = initialState;
         this.#speed = speed;
         this.#generation = 0;
+        this.#eventListener = eventListener;
     }
 
     get speed() { return this.#speed; }
@@ -359,14 +379,7 @@ class GameOfLifeRunner {
     get isRunning() { return this.#timerId != null; }
 
     toggleCellStatus(row, col, isAlive) {
-        let myCell = this.#renderer.grid.grid[row][col];
-        if (myCell.isAlive != isAlive) {
-            if (myCell.isAlive) {
-                myCell.die();
-            } else {
-                myCell.born();
-            }
-        }
+        this.#renderer.toggleCellStatus(row, col, isAlive);
     }
 
     play(runner) {
@@ -376,6 +389,11 @@ class GameOfLifeRunner {
         // Si aucun changement, on arrête le jeu
         if (numberOfChanges == 0) {
             runner.pause();
+        }
+        // Génèration d'un évènement personnalisé pour indiquer le changement de génération
+        if (runner.#eventListener != null) {
+            let nextGenerationEvent = new CustomEvent("generation.change", { detail: {generation: runner.#generation }});
+            runner.#eventListener.dispatchEvent(nextGenerationEvent);
         }
     }
 
@@ -392,7 +410,7 @@ class GameOfLifeRunner {
         // On arrête le jeu
         this.pause();
         // On réinitialise la grille
-        this.#renderer.grid = new GameOfLifeGrid(this.#renderer.grid.nbRows, this.#renderer.grid.nbCols, this.#initialState);
+        this.#renderer.initNewGrid(this.#initialState);
         // Et les compteurs !
         this.#generation = 0;
     }
@@ -409,6 +427,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnPause = document.getElementById("pause"),
         btnRestart = document.getElementById("restart"),
         chkDisplayGrid = document.getElementById("chkDisplayGrid"),
+        lblGeneration = document.getElementById("generation"),
         gameRuner = null;
 
     btnStepByStep.addEventListener("click", () => {
@@ -463,14 +482,18 @@ document.addEventListener("DOMContentLoaded", () => {
             gameRuner.pause();
         }
         // On récupère le paramétrage de nombre de lignes et de colonnes
-        let nbRow = parseInt(document.getElementById("nblignes").value, 10);
-        let nbCol = parseInt(document.getElementById("nbcolonnes").value, 10);
-        gameRuner = new GameOfLifeRunner(nbRow, nbCol);
+        let nbRow = parseInt(document.getElementById("nblignes").value, 10),
+            nbCol = parseInt(document.getElementById("nbcolonnes").value, 10);
+        gameRuner = new GameOfLifeRunner(nbRow, nbCol, "gameContainer", lblGeneration);
         btnStart.disabled = false;
         btnStepByStep.disabled = false;
         btnPause.disabled = true;
         btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = false;
+    });
+
+    lblGeneration.addEventListener("generation.change", (e) => {
+        lblGeneration.value = e.detail.generation;
     });
 
     chkDisplayGrid.addEventListener("click", (e) => {
