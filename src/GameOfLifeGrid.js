@@ -7,10 +7,6 @@ export default class GameOfLifeGrid {
     #nbRows;
     #nbCols;
     #grid;
-    // Liste des cellules vivantes. Optimisation du calcul des cellules mourantes.
-    #listOfAliveCells = [];
-    // Liste des cellules mortes voisines des cellules vivantes. Optimisation du calcul des cellules naissantes.
-    #lisOfDeadNeighbours = [];
 
     constructor(nbRows, nbCols, intialState = null) {
         this.#nbRows = nbRows;
@@ -73,14 +69,6 @@ export default class GameOfLifeGrid {
         return neighbours;
     }
 
-    #initDeadNeighbours(cell) {
-        for (let neighbour of cell.neighbours) {
-            if (!neighbour.isAlive && this.#lisOfDeadNeighbours.indexOf(neighbour) == -1) {
-                this.#lisOfDeadNeighbours.push(neighbour);
-            }
-        }
-    }
-
     /**
      * Initialisation de l'état de la grille
      * 
@@ -114,8 +102,6 @@ export default class GameOfLifeGrid {
                 if (cellStateToApply) {
                     let myCell = this.#grid[rowNumber + rowOffset][colNumber + colOffset];
                     myCell.born();
-                    this.#listOfAliveCells.push(myCell);
-                    this.#initDeadNeighbours(myCell);
                 }
             }
         }
@@ -132,38 +118,27 @@ export default class GameOfLifeGrid {
         // Recalcule des voisins des cellules
     }
 
-    /**
-     * Retourne la liste des cellules naissantes pour la prochaine itération
-     */
-    get borningCells() {
-        let borningCells = [];
-        // Seules les cellules mortes voisines de cellules vivantes peuvent naître
-        for (let myCell of this.#lisOfDeadNeighbours) {
-            if (myCell.isAliveNext) {
-                borningCells.push(myCell);
-            }
-        }
-        return borningCells;
-    }
-
-    /**
-     * Retourne la liste des cellules mourantes pour la prochaine itération
-     */
-    get dyingCells() {
-        let dyingCells = [];
-        // Seules les cellules vivantes peuvent mourir
-        for (let myCell of this.#listOfAliveCells) {
-            if (!myCell.isAliveNext && myCell.isAlive) {
-                dyingCells.push(myCell);
-            }
-        }
-        return dyingCells;
-    }
-
     proceedToNextGeneration() {
-        let borningCells = this.borningCells,
-            dyingCells = this.dyingCells,
-            generationChanges = {borningCells: borningCells, dyingCells: dyingCells};
+        let borningCells = [],
+            dyingCells = [];
+        for (let rowNumber = 0; rowNumber < this.#nbRows; rowNumber++) {
+            for (let colNumber = 0; colNumber < this.#nbCols; colNumber++) {
+                let myCell = this.#grid[rowNumber][colNumber];
+                if (myCell.isAlive) {
+                    // Seules les cellules vivantes peuvent mourir
+                    if (!myCell.isAliveNext) {
+                        dyingCells.push(myCell);
+                    }
+                    // Seules les voisines mortes d'une cellule vivante peuvent naître.
+                    myCell.neighbours.forEach((neighbour) => {
+                        if (!neighbour.isAlive && neighbour.isAliveNext && borningCells.indexOf(neighbour) == -1) {
+                            borningCells.push(neighbour);
+                        }
+                    });
+                }
+            }
+        }
+        let generationChanges = { borningCells: borningCells, dyingCells: dyingCells };
         // Mise à jour des listes de cellules vivantes et mortes
         borningCells.forEach((cell) => {
             cell.born();
@@ -171,25 +146,6 @@ export default class GameOfLifeGrid {
         dyingCells.forEach((cell) => {
             cell.die();
         });
-        // Suppression des cellules mourantes de la liste des cellules vivantes
-        for (let cell of dyingCells) {
-            let indexOfDeadCell = this.#listOfAliveCells.indexOf(cell);
-            if (indexOfDeadCell != -1) {
-                this.#listOfAliveCells.splice(indexOfDeadCell, 1);
-            }
-        }
-        // Ajout des cellules naissantes à la liste des cellules vivantes (et ajout de leurs voisins morts à la liste des cellules mortes)
-        for (let cell of borningCells) {
-            this.#listOfAliveCells.push(cell);
-            this.#initDeadNeighbours(cell);
-        }
-        // Epuration de la liste des cellules mortes (suppression des cellules qui sont nées durant cette génération)
-        for (let cell of borningCells) {
-            let indexOfAliveCell = this.#lisOfDeadNeighbours.indexOf(cell);
-            if (indexOfAliveCell != -1) {
-                this.#lisOfDeadNeighbours.splice(indexOfAliveCell, 1);
-            }
-        }
         // On retourne les changements effectués lors du changement de génération
         return generationChanges;
     }
