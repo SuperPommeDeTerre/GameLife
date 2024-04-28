@@ -1,4 +1,5 @@
 import GameOfLifeGrid from "./GameOfLifeGrid.js";
+
 /**
  * Classe d'affichage HTML du jeu de la vie
  */

@@ -87,24 +87,37 @@ export default class GameOfLifeGrid {
      * @param {*} initialState Etat initial à appliquer à la grille
      */
     #initGridState(initialState = null) {
+        let stateToApply = [];
         // Calcul des voisins de toutes les cellules
         this.#computeAllNeighBours();
         // Si l'état initial n'est pas fourni, on remplit la grille de manière aléatoire
         if (initialState == null) {
+            stateToApply = {
+                rowCount: this.#nbRows,
+                colCount: this.#nbCols,
+                data: new Array(this.#nbRows)
+            };
             for (let rowNumber = 0; rowNumber < this.#nbRows; rowNumber++) {
+                stateToApply.data[rowNumber] = new Array(this.#nbCols);
                 for (let colNumber = 0; colNumber < this.#nbCols; colNumber++) {
                     // Initialisation aléatoire de l'état de la cellule
-                    let myCell = this.#grid[rowNumber][colNumber];
-                    // Les cellules étant mortes initialement, on les fait naître aléatoirement
-                    if (Math.floor(Math.random() * 2) == 1) {
-                        myCell.born();
-                        this.#listOfAliveCells.push(myCell);
-                        this.#initDeadNeighbours(myCell);
-                    }
+                    stateToApply.data[rowNumber][colNumber] = (Math.floor(Math.random() * 2) == 1);
                 }
             }
-        } else {
-            // Dans le cas contraire, on initialise la grille avec l'état fourni en centrant le schéma initial dans la grille
+        }
+        // Calcul du décalage du pattern (centrage dans la grille affichée)
+        let rowOffset = Math.floor((this.#nbRows - stateToApply.rowCount) / 2),
+            colOffset = Math.floor((this.#nbCols - stateToApply.colCount) / 2);
+        for (let rowNumber = 0; rowNumber < stateToApply.rowCount; rowNumber++) {
+            for (let colNumber = 0; colNumber < stateToApply.colCount; colNumber++) {
+                let cellStateToApply = stateToApply.data[rowNumber][colNumber];
+                if (cellStateToApply) {
+                    let myCell = this.#grid[rowNumber + rowOffset][colNumber + colOffset];
+                    myCell.born();
+                    this.#listOfAliveCells.push(myCell);
+                    this.#initDeadNeighbours(myCell);
+                }
+            }
         }
     }
 
@@ -170,10 +183,11 @@ export default class GameOfLifeGrid {
             this.#listOfAliveCells.push(cell);
             this.#initDeadNeighbours(cell);
         }
-        // Suppression des cellules vivantes de la liste des cellules mortes (épuration)
-        for (let i = this.#lisOfDeadNeighbours.length; i--;) {
-            if (this.#lisOfDeadNeighbours[i].isAlive) {
-                this.#lisOfDeadNeighbours.splice(i, 1);
+        // Epuration de la liste des cellules mortes (suppression des cellules qui sont nées durant cette génération)
+        for (let cell of borningCells) {
+            let indexOfAliveCell = this.#lisOfDeadNeighbours.indexOf(cell);
+            if (indexOfAliveCell != -1) {
+                this.#lisOfDeadNeighbours.splice(indexOfAliveCell, 1);
             }
         }
         // On retourne les changements effectués lors du changement de génération
