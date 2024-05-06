@@ -24,16 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
         btnPause.disabled = false;
         btnStepByStep.disabled = false;
         btnStart.disabled = true;
-        btnVitesseRapide.disabled = false;
-        btnVitesseTresRapide.disabled = false;
-    });
-
-    btnVitesseRapide.addEventListener("click", () => {
-        gameRuner.speed = 200;
-        btnPause.disabled = false;
-        btnStepByStep.disabled = false;
-        btnStart.disabled = false;
-        btnVitesseRapide.disabled = true;
         btnVitesseTresRapide.disabled = false;
     });
 
@@ -42,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
         btnPause.disabled = false;
         btnStepByStep.disabled = false;
         btnStart.disabled = false;
-        btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = true;
     });
 
@@ -51,17 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
         btnStart.disabled = false;
         btnStepByStep.disabled = false;
         btnPause.disabled = true;
-        btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = false;
     });
 
     btnRestart.addEventListener("click", () => {
-        // Sur clic sur le bouton "Redémarrer", on supprime l'alerte éventuelle de fin de jeu.
-        let alertNode = document.querySelector("#alerteDeFin .alert"),
-            alertInstance = bootstrap.Alert.getInstance(alertNode);
-        if (alertInstance != null) {
-            alertInstance.close();
-        }
         if (gameRuner != null) {
             gameRuner.pause();
         }
@@ -70,12 +52,11 @@ document.addEventListener("DOMContentLoaded", () => {
         btnStart.disabled = false;
         btnStepByStep.disabled = false;
         btnPause.disabled = true;
-        btnVitesseRapide.disabled = false;
         btnVitesseTresRapide.disabled = false;
     });
 
     lblGeneration.addEventListener("generation.change", (e) => {
-        lblGeneration.value = e.detail.generation;
+        lblGeneration.innerText = e.detail.generation;
     });
 
     btnRestart.dispatchEvent(new Event("click"));

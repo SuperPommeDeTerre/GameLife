@@ -13,24 +13,40 @@
             <div class="row mt-2 mb-2 justify-content-center">
                 <div class="col-auto">
                     <div class="btn-toolbar" aria-label="Barre de contr&ocirc;le et d'information">
-                        <div class="btn-group me-2" aria-label="Contr&ocirc;les">
+                        <div class="btn-group-vertical me-2" aria-label="Contr&ocirc;les">
                             <button type="button" name="button" class="btn btn-primary" id="pause" title="Mettre en pause" disabled><span class="fa-solid fa-pause"></span></button>
                             <button type="button" name="button" class="btn btn-primary" id="stepbystep" title="Pas à pas"><span class="fa-solid fa-forward-step"></span></button>
                             <button type="button" name="button" class="btn btn-primary" id="start" title="Démarrer"><span class="fa-solid fa-play"></span></button>
-                            <button type="button" name="button" class="btn btn-primary" id="rapide" title="Vitesse x2"><span class="fa-solid fa-forward"></span></button>
+                            <input type="range" id="playspeedcontrol" class="form-range d-none" min="0" max="5">
                             <button type="button" name="button" class="btn btn-primary" id="plusrapide" title="Vitesse x4"><span class="fa-solid fa-forward-fast"></span></button>
                         </div>
-                        <div class="input-group me-2">
+                        <div class="btn-group-vertical me-2">
                             <button type="button" name="button" class="btn btn-primary" id="restart" title="Redémarrer"><span class="fa-solid fa-arrows-rotate"></span></button>
-                        </div>
-                        <div class="input-group me-2">
-                            <div class="input-group-text" id="generationLabel"><span class="fa-solid fa-hashtag"></span></div>
-                            <input type="text" class="form-control" aria-label="Num&eacute;ro de g&eacute;n&eacute;ration" id="generation" aria-describedby="generationLabel" disabled>
+                            <button type="button" name="button" class="btn btn-primary" id="size" title="Taille de l'univers"><span class="fa-solid fa-expand"></span></button>
+                            <div class="btn-group dropend">
+                                <button type="button" name="button" class="btn btn-primary dropdown-toggle" id="statistics" data-bs-toggle="dropdown" aria-expanded="false" title="Statistiques"><span class="fa-solid fa-chart-line"></span></button>
+                                <ul class="dropdown-menu">
+                                    <li class="ms-2"><span class="fa-solid fa-cake-candles"></span> G&eacute;n&eacute;ration n&deg;<span id="generation"></span></li>
+                                    <li class="ms-2"><span class="fa-solid fa-baby"></span> <span id="birth_count"></span> Naissances</li>
+                                    <li class="ms-2"><span class="fa-solid fa-skull"></span> <span id="death_count"></span> Morts</li>
+                                </ul>
+                            </div>
+                            <div class="btn-group dropend">
+                                <button type="button" name="button" class="btn btn-primary dropdown-toggle" id="parameters" data-bs-toggle="dropdown" aria-expanded="false" title="Paramètres"><span class="fa-solid fa-gear"></span></button>
+                                <ul class="dropdown-menu">
+                                    <li><div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="" id="chk_show_births" checked>
+                                            <label class="form-check-label" for="chk_show_births">Afficher les naissances</label>
+                                        </div></li>
+                                    <li><div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="chk_show_incoming_deaths" checked>
+                                        <label class="form-check-label" for="chk_show_incoming_deaths">Afficher les morts à venir</label>
+                                    </div></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row justify-content-center" id="alerteDeFin">
             </div>
             <div class="row justify-content-center">
                 <div class="col-auto" id="gameContainer"></div>
