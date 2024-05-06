@@ -1,4 +1,4 @@
-import GameOfLifeRendererHtml from './GameOfLifeRendererHtml.js';
+import GameOfLifeRendererCanvas from './GameOfLifeRendererCanvas.js';
 
 /**
  * Classe de gestion du jeu de la vie
@@ -7,7 +7,6 @@ export default class GameOfLifeRunner {
     #renderer;
     #initialState;
     #speed;
-    #generation;
     #timerId;
     #eventListener;
 
@@ -18,13 +17,12 @@ export default class GameOfLifeRunner {
      * @param {string} containerId
      * @param {array} initialState
      * @param {int} speed 
-     * @param {GameOfLifeRendererHtml} renderer 
+     * @param {GameOfLifeRendererCanvas} renderer
      */
     constructor(nbRows, nbCols, containerId, eventListener = null, initialState = null, speed = 200, renderer = null) {
-        this.#renderer = renderer==null?new GameOfLifeRendererHtml(containerId, nbRows, nbCols):renderer;
+        this.#renderer = renderer==null?new GameOfLifeRendererCanvas(containerId, nbRows, nbCols):renderer;
         this.#initialState = initialState;
         this.#speed = speed;
-        this.#generation = 0;
         this.#eventListener = eventListener;
     }
 
@@ -37,8 +35,6 @@ export default class GameOfLifeRunner {
         this.start();
     }
 
-    get generation() { return this.#generation; }
-
     get isRunning() { return this.#timerId != null; }
 
     toggleCellStatus(row, col) {
@@ -46,16 +42,15 @@ export default class GameOfLifeRunner {
     }
 
     play(runner) {
-        let numberOfChanges = runner.#renderer.renderNextGeneration();
+        let nextGenerationResult = runner.#renderer.renderNextGeneration();
         // Incrémentation du compteur de génération
-        runner.#generation++;
         // Si aucun changement, on arrête le jeu
-        if (numberOfChanges == 0) {
+        if (nextGenerationResult.number_of_changes == 0) {
             runner.pause();
         }
         // Génèration d'un évènement personnalisé pour indiquer le changement de génération
         if (runner.#eventListener != null) {
-            let nextGenerationEvent = new CustomEvent("generation.change", { detail: {generation: runner.#generation }});
+            let nextGenerationEvent = new CustomEvent("generation.change", { detail: {generation: nextGenerationResult.generation }});
             runner.#eventListener.dispatchEvent(nextGenerationEvent);
         }
     }
@@ -74,7 +69,5 @@ export default class GameOfLifeRunner {
         this.pause();
         // On réinitialise la grille
         this.#renderer.initNewGrid(this.#initialState);
-        // Et les compteurs !
-        this.#generation = 0;
     }
 }

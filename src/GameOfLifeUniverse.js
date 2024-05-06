@@ -1,29 +1,38 @@
-import Cell from './Cell.js';
+import GameOfLifeCell from './GameOfLifeCell.js';
 
 /**
- * Classe représentant la grille de jeu
+ * Classe représentant l'univers de jeu
  */
-export default class GameOfLifeGrid {
+export default class GameOfLifeUniverse {
     #nbRows;
     #nbCols;
     #grid;
+    #generation;
+    #aliveCells = {};
+    #dyingCells = [];
 
     constructor(nbRows, nbCols, intialState = null) {
         this.#nbRows = nbRows;
         this.#nbCols = nbCols;
         this.#grid = new Array(nbRows);
         this.#init(intialState);
+        this.#dyingCells = [];
+        this.#generation = 0;
     }
 
     get nbRows() { return this.#nbRows; }
 
     get nbCols() { return this.#nbCols; }
 
+    get aliveCells() { return this.#aliveCells; }
+
+    get generation() { return this.#generation; }
+
     #init(initialState = null) {
         for (let i = 0; i < this.#nbRows; i++) {
             this.#grid[i] = new Array(this.#nbCols);
             for (let j = 0; j < this.#nbCols; j++) {
-                this.#grid[i][j] = new Cell(i, j);
+                this.#grid[i][j] = new GameOfLifeCell(i, j);
             }
         }
         this.#initGridState(initialState);
@@ -102,6 +111,7 @@ export default class GameOfLifeGrid {
                 if (cellStateToApply) {
                     let myCell = this.#grid[rowNumber + rowOffset][colNumber + colOffset];
                     myCell.born();
+                    this.#aliveCells[myCell.key] = myCell;
                 }
             }
         }
@@ -118,43 +128,73 @@ export default class GameOfLifeGrid {
         // Recalcule des voisins des cellules
     }
 
-    proceedToNextGeneration() {
-        let borningCells = [],
-            dyingCells = [];
-        for (let rowNumber = 0; rowNumber < this.#nbRows; rowNumber++) {
-            for (let colNumber = 0; colNumber < this.#nbCols; colNumber++) {
-                let myCell = this.#grid[rowNumber][colNumber];
-                if (myCell.isAlive) {
-                    // Seules les cellules vivantes peuvent mourir
-                    if (!myCell.isAliveNext) {
-                        dyingCells.push(myCell);
-                    }
-                    // Seules les voisines mortes d'une cellule vivante peuvent naître.
-                    myCell.neighbours.forEach((neighbour) => {
-                        if (!neighbour.isAlive && neighbour.isAliveNext && borningCells.indexOf(neighbour) == -1) {
-                            borningCells.push(neighbour);
-                        }
-                    });
+    /**
+     * Effectue un tours de jeu.
+     * 
+     * @returns {object} Objet avec :
+     *   - Changements opérés :
+     *     - Liste des cellules nées au cours du tour
+     *     - Liste des cellules mortes au cours du tour
+     *   - Changements à venir :
+     *     - Liste des cellules qui mourront au prochain tour
+     *   - Statistiques :
+     *     - Numéro de génération
+     */
+    tick() {
+        let bornCells = [],
+            diedCells = [];
+
+        for (let myCell of Object.values(this.#aliveCells)) {
+            // Seules les voisines mortes d'une cellule vivante peuvent naître.
+            myCell.neighbours.forEach((neighbour) => {
+                if (!neighbour.isAlive && neighbour.isAliveNext && bornCells.indexOf(neighbour) == -1) {
+                    bornCells.push(neighbour);
                 }
-            }
+            });
         }
-        let generationChanges = { borningCells: borningCells, dyingCells: dyingCells };
-        // Mise à jour des listes de cellules vivantes et mortes
-        borningCells.forEach((cell) => {
-            cell.born();
-        });
-        dyingCells.forEach((cell) => {
+        // Mise à jour des listes de cellules vivantes en enlevant les cellules mortes...
+        this.#dyingCells.forEach((cell) => {
             cell.die();
+            diedCells.push(cell);
+            delete this.#aliveCells[cell.key];
         });
+        // ...et en ajoutant les vivantes !
+        bornCells.forEach((cell) => {
+            cell.born();
+            this.#aliveCells[cell.key] = cell;
+        });
+
+        // Calcul des cellules mourantes à la prochaine génération.
+        this.#dyingCells = [];
+        Object.values(this.#aliveCells).forEach((cell) => {
+            // Seules les cellules vivantes peuvent mourir
+            if (!cell.isAliveNext) {
+                this.#dyingCells.push(cell);
+            }
+        });
+        this.#generation++;
         // On retourne les changements effectués lors du changement de génération
-        return generationChanges;
+        return {
+            changes: {
+                births: bornCells,
+                deaths: diedCells,
+            },
+            coming: {
+                deaths: this.#dyingCells,
+            },
+            statistics: {
+                generation: this.#generation,
+            },
+        }
     }
 
     toggleCellStatus(cell) {
         if (cell.isAlive) {
             cell.die();
+            delete this.#aliveCells[cell.key];
         } else {
             cell.born();
+            this.#aliveCells[cell.key] = cell;
         }
     }
     

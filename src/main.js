@@ -85,15 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("gameContainer").classList.toggle("visually-hidden");
     });
 
-    document.getElementById("gameContainer").addEventListener("click", (e) => {
-        // On ne prend que les click sur les cellules
-        let noeudClique = e.target;
-        if (noeudClique.nodeName == "TD") {
-            // Les cellules vivantes ont changées. Il faut effectuer un recalcul à la prochaine itération...
-            gameRuner.toggleCellStatus(noeudClique.dataset.row, noeudClique.dataset.col);
-        }
-    });
-
     btnRestart.dispatchEvent(new Event("click"));
 }, false);
 

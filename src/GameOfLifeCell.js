@@ -1,13 +1,14 @@
 /**
  * Classe représentant une cellule du jeu de la vie
  */
-export default class Cell {
+export default class GameOfLifeCell {
     #row;
     #col;
     #isAlive;
     #underlyingCell;
     #numberOfAliveNeighbours;
     #neighbours;
+    #key;
 
     /**
      * Constructeur de cellule.
@@ -21,11 +22,14 @@ export default class Cell {
         this.#underlyingCell = null;
         this.#numberOfAliveNeighbours = 0;
         this.#neighbours = [];
+        this.#key = GameOfLifeCell.getCellKey(this.#row, this.#col);
     }
 
     get row() { return this.#row; }
 
     get col() { return this.#col; }
+
+    get key() { return this.#key; }
 
     /**
      * Liste des cellules voisines de la cellule
@@ -60,5 +64,9 @@ export default class Cell {
         for (let neighbour of this.#neighbours) {
             neighbour.#numberOfAliveNeighbours--;
         }
+    }
+
+    static getCellKey(row, col) {
+        return "r" + row + "c" + col;
     }
 }

@@ -1,4 +1,11 @@
 @import url("all.min.css");
+html, body {
+    height: 100%;
+}
+#gameContainer {
+    width: 98vw;
+    height: 85vh;
+}
 #gameContainer td {
     background-color: white;
     width: 5px;

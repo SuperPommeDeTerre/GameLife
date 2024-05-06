@@ -1,4 +1,4 @@
-import GameOfLifeGrid from "./GameOfLifeGrid.js";
+import GameOfLifeUniverse from "./GameOfLifeUniverse.js";
 
 /**
  * Classe d'affichage HTML du jeu de la vie
@@ -12,9 +12,9 @@ export default class GameOfLifeRendererHtml {
 
     constructor(containerID = "gameContainer", nbRows = null, nbCols = null) {
         if (nbRows == null || nbCols == null) {
-            this.#grid = new GameOfLifeGrid(GameOfLifeRendererHtml.#defaultNbRows, GameOfLifeRendererHtml.#defaultNbCols);
+            this.#grid = new GameOfLifeUniverse(GameOfLifeRendererHtml.#defaultNbRows, GameOfLifeRendererHtml.#defaultNbCols);
         } else {
-            this.#grid = new GameOfLifeGrid(nbRows, nbCols);
+            this.#grid = new GameOfLifeUniverse(nbRows, nbCols);
         }
         this.#containerID = containerID;
         this.#initialRender(this.#containerID);
@@ -43,6 +43,15 @@ export default class GameOfLifeRendererHtml {
         // On vide le conteneur avant de le remplir
         container.innerHTML = "";
         container.appendChild(gridTable);
+
+        gridTable.addEventListener("click", (e) => {
+            // On ne prend que les click sur les cellules
+            let noeudClique = e.target;
+            if (noeudClique.nodeName == "TD") {
+                // Les cellules vivantes ont changées. Il faut effectuer un recalcul à la prochaine itération...
+                gameRuner.toggleCellStatus(noeudClique.dataset.row, noeudClique.dataset.col);
+            }
+        });
     }
 
     /**
@@ -79,6 +88,6 @@ export default class GameOfLifeRendererHtml {
     initNewGrid(initialState = null, nbRows = null, nbCols = null) {
         let nbColsToSet = nbCols == null?this.#grid.nbCols:nbCols,
             nbRowsToSet = nbRows == null?this.#grid.nbRows:nbRows;
-        this.#grid = new GameOfLifeGrid(nbRowsToSet, nbColsToSet, initialState);
+        this.#grid = new GameOfLifeUniverse(nbRowsToSet, nbColsToSet, initialState);
     }
 }
