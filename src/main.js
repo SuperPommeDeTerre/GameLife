@@ -11,13 +11,12 @@ document.addEventListener("DOMContentLoaded", () => {
         btnStepByStep = document.getElementById("stepbystep"),
         btnPause = document.getElementById("pause"),
         btnRestart = document.getElementById("restart"),
-        chkDisplayGrid = document.getElementById("chkDisplayGrid"),
         lblGeneration = document.getElementById("generation"),
         gameRuner = null;
 
     btnStepByStep.addEventListener("click", () => {
         btnPause.dispatchEvent(new Event("click"));
-        gameRuner.play(gameRuner);
+        gameRuner.tick();
     });
 
     btnStart.addEventListener("click", () => {
@@ -67,9 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
             gameRuner.pause();
         }
         // On récupère le paramétrage de nombre de lignes et de colonnes
-        let nbRow = parseInt(document.getElementById("nblignes").value, 10),
-            nbCol = parseInt(document.getElementById("nbcolonnes").value, 10);
-        gameRuner = new GameOfLifeRunner(nbRow, nbCol, "gameContainer", lblGeneration);
+        gameRuner = new GameOfLifeRunner(document.getElementById("gameContainer"), null, null, lblGeneration);
         btnStart.disabled = false;
         btnStepByStep.disabled = false;
         btnPause.disabled = true;
@@ -79,10 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lblGeneration.addEventListener("generation.change", (e) => {
         lblGeneration.value = e.detail.generation;
-    });
-
-    chkDisplayGrid.addEventListener("click", (e) => {
-        document.getElementById("gameContainer").classList.toggle("visually-hidden");
     });
 
     btnRestart.dispatchEvent(new Event("click"));

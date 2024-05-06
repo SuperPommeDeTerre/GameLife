@@ -115,6 +115,14 @@ export default class GameOfLifeUniverse {
                 }
             }
         }
+        // Calcul des cellules mourantes à la prochaine génération
+        this.#dyingCells = [];
+        Object.values(this.#aliveCells).forEach((cell) => {
+            // Seules les cellules vivantes peuvent mourir
+            if (!cell.isAliveNext) {
+                this.#dyingCells.push(cell);
+            }
+        });
     }
 
     /**
@@ -185,6 +193,7 @@ export default class GameOfLifeUniverse {
             statistics: {
                 generation: this.#generation,
             },
+            is_stall: bornCells.length == 0 && diedCells.length == 0,
         }
     }
 
@@ -196,6 +205,14 @@ export default class GameOfLifeUniverse {
             cell.born();
             this.#aliveCells[cell.key] = cell;
         }
+        // Mise à jour des cellules mourantes à la prochaine génération
+        this.#dyingCells = [];
+        Object.values(this.#aliveCells).forEach((cell) => {
+            // Seules les cellules vivantes peuvent mourir
+            if (!cell.isAliveNext) {
+                this.#dyingCells.push(cell);
+            }
+        });
     }
     
     getCellFromCoords(row, col) {

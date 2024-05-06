@@ -1,4 +1,5 @@
 import GameOfLifeRendererCanvas from './GameOfLifeRendererCanvas.js';
+import GameOfLifeUniverse from './GameOfLifeUniverse.js';
 
 /**
  * Classe de gestion du jeu de la vie
@@ -9,6 +10,7 @@ export default class GameOfLifeRunner {
     #speed;
     #timerId;
     #eventListener;
+    #universe;
 
     /**
      * 
@@ -19,11 +21,24 @@ export default class GameOfLifeRunner {
      * @param {int} speed 
      * @param {GameOfLifeRendererCanvas} renderer
      */
-    constructor(nbRows, nbCols, containerId, eventListener = null, initialState = null, speed = 200, renderer = null) {
-        this.#renderer = renderer==null?new GameOfLifeRendererCanvas(containerId, nbRows, nbCols):renderer;
+    constructor(container, nbRows, nbCols, eventListener = null, initialState = null, speed = 200, renderer = null) {
+        // Initialisation du renderer en premier afin de déterminer les dimensions de l'univers
+        this.#renderer = renderer==null?new GameOfLifeRendererCanvas(container, nbRows, nbCols):renderer;
+        // Création de l'univers
+        this.#universe = new GameOfLifeUniverse(this.#renderer.universe_dimensions.height, this.#renderer.universe_dimensions.width, initialState);
+        this.#renderer.initUniverse(this.#universe);
         this.#initialState = initialState;
         this.#speed = speed;
         this.#eventListener = eventListener;
+        this.#renderer.canvas.addEventListener("click", (event) => {
+            // Calcul de la cellule cliquée
+            let rect = this.#renderer.canvas.getBoundingClientRect(),
+                x = event.clientX - rect.left,
+                y = event.clientY - rect.top,
+                col = Math.floor(x / (this.#renderer.cell_size + 1)),
+                row = Math.floor(y / (this.#renderer.cell_size + 1));
+            this.toggleCellStatus(this.#universe.getCellFromCoords(row, col));
+        });
     }
 
     get speed() { return this.#speed; }
@@ -37,31 +52,48 @@ export default class GameOfLifeRunner {
 
     get isRunning() { return this.#timerId != null; }
 
-    toggleCellStatus(row, col) {
-        this.#renderer.toggleCellStatus(row, col);
+    toggleCellStatus(cell) {
+        this.#universe.toggleCellStatus(cell);
+        this.#renderer.toggleCellStatus(cell);
     }
 
-    play(runner) {
-        let nextGenerationResult = runner.#renderer.renderNextGeneration();
+    tick() {
+        // On fait avancer l'univers d'une génération
+        let ts1 = performance.now(),
+        ts2 = null;
+        let universeTickResult = this.#universe.tick();
+        ts2 = performance.now();
+        console.log("Calcul de génération : " + (ts2 - ts1) + "ms");
         // Incrémentation du compteur de génération
-        // Si aucun changement, on arrête le jeu
-        if (nextGenerationResult.number_of_changes == 0) {
-            runner.pause();
-        }
+        this.#renderer.render(universeTickResult);
         // Génèration d'un évènement personnalisé pour indiquer le changement de génération
-        if (runner.#eventListener != null) {
-            let nextGenerationEvent = new CustomEvent("generation.change", { detail: {generation: nextGenerationResult.generation }});
-            runner.#eventListener.dispatchEvent(nextGenerationEvent);
+        if (this.#eventListener != null) {
+            let nextGenerationEvent = new CustomEvent("generation.change", { detail: {generation: this.#universe.generation }});
+            this.#eventListener.dispatchEvent(nextGenerationEvent);
         }
+        return universeTickResult;
+    }
+
+    play() {
+        let universeTickResult = this.tick();
+        // Si aucun changement, on arrête le jeu
+        if (universeTickResult.is_stall) {
+            this.pause();
+            return;
+        }
+        // On relance le timer
+        this.#timerId = window.setTimeout(this.play.bind(this), this.#speed);
     }
 
     start() {
-        this.#timerId = window.setInterval(this.play, this.#speed, this);
+        this.#timerId = window.setTimeout(this.play.bind(this), this.#speed);
     }
 
     pause() {
-        window.clearTimeout(this.#timerId);
-        this.#timerId = null;
+        if (this.#timerId != null) {
+            window.clearTimeout(this.#timerId);
+            this.#timerId = null;
+        }
     }
 
     reset() {
