@@ -133,11 +133,11 @@ export default class GameOfLifeUniverse {
      */
     resize(nbRows, nbCols) {
         // Si la grille est plus grande, on ajoute des cellules et on les initialise
-        // Recalcule des voisins des cellules
+        // Recalcul des voisins des cellules
     }
 
     /**
-     * Effectue un tours de jeu.
+     * Effectue un tour de jeu.
      * 
      * @returns {object} Objet avec :
      *   - Changements opérés :

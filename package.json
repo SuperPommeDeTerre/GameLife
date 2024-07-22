@@ -7,9 +7,9 @@
   },
   "license": "ISC",
   "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-preset-env": "^1.7.0",
-    "jest": "^29.7.0",
-    "http-server": "^14.1.1"
+    "@babel/core": "^7.24.9",
+    "@babel/preset-env": "^7.24.8",
+    "http-server": "^14.1.1",
+    "jest": "^29.7.0"
   }
 }
